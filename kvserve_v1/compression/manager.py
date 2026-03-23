@@ -28,7 +28,7 @@ import torch
 from vllm.logger import init_logger
 
 if TYPE_CHECKING:
-    from kvserve.manager.compression_manager import CompressedKVData, CompressionConfig, CompressionManager
+    from kvserve_v1.compression.compression_manager import CompressedKVData, CompressionConfig, CompressionManager
 
 logger = init_logger(__name__)
 
@@ -100,7 +100,7 @@ def pack_compressed(compressed: "CompressedKVData") -> torch.Tensor:
 def unpack_compressed(super_tensor: torch.Tensor, request_id: str) -> "CompressedKVData":
     """Deserialize a GPU uint8 tensor back into CompressedKVData."""
     import pickle
-    from kvserve.manager.compression_manager import CompressedKVData
+    from kvserve_v1.compression.compression_manager import CompressedKVData
 
     data = bytes(super_tensor.cpu().numpy())
     obj = pickle.loads(data)
@@ -157,7 +157,7 @@ class KVCompressionAdapter:
         self._manager_cache: dict[str, tuple["CompressionManager", "CompressionConfig"]] = {}
 
         if compression_spec == "default":
-            from kvserve.manager.compression_manager import get_default_compression_config
+            from kvserve_v1.compression.compression_manager import get_default_compression_config
             cfg_dict = get_default_compression_config()
             self._patch_model_name(cfg_dict)
             self._manager = self._build_manager(cfg_dict)
@@ -186,8 +186,8 @@ class KVCompressionAdapter:
                         self._model_name)
 
     def _init_controller(self, spec: dict) -> None:
-        from kvserve.controller.profile_library import ProfileLibrary
-        from kvserve.controller.online_controller import OnlineController
+        from kvserve_v1.compression.controller.profile_library import ProfileLibrary
+        from kvserve_v1.compression.controller.online_controller import OnlineController
         library = ProfileLibrary(spec["library_path"])
         self._controller = OnlineController(
             profile_library=library,
@@ -199,7 +199,7 @@ class KVCompressionAdapter:
                     spec["library_path"], spec.get("epsilon", 0.1))
 
     def _make_config(self, cfg_dict: dict) -> "CompressionConfig":
-        from kvserve.manager.compression_manager import CompressionConfig
+        from kvserve_v1.compression.compression_manager import CompressionConfig
         return CompressionConfig(
             enabled=cfg_dict.get("enabled", True),
             pipeline=cfg_dict.get("pipeline", []),
@@ -210,19 +210,19 @@ class KVCompressionAdapter:
         )
 
     def _build_manager(self, cfg_dict: dict) -> "CompressionManager":
-        from kvserve.manager.compression_manager import CompressionManager
+        from kvserve_v1.compression.compression_manager import CompressionManager
         pipeline = cfg_dict.get("pipeline", [])
         transformer_cls = None
         quantizer_cls = None
         codec_cls = None
         if "transformer" in pipeline:
-            from kvserve.transformer.kvserve_transformer import KVServeTransformer
+            from kvserve_v1.compression.transformer.kvserve_transformer import KVServeTransformer
             transformer_cls = KVServeTransformer
         if "quantizer" in pipeline:
-            from kvserve.quantizer.kvserve_quantizer import KVServeQuantizer
+            from kvserve_v1.compression.quantizer.kvserve_quantizer import KVServeQuantizer
             quantizer_cls = KVServeQuantizer
         if "codec" in pipeline:
-            from kvserve.codec import KVServeCodec
+            from kvserve_v1.compression.codec import KVServeCodec
             codec_cls = KVServeCodec
         return CompressionManager(
             config=self._make_config(cfg_dict),

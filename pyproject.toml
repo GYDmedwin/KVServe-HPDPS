@@ -13,3 +13,6 @@ dependencies = [
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["kvserve_v1*"]
+
+[tool.setuptools.package-data]
+"kvserve_v1.compression.config.duo_config" = ["*.csv"]
