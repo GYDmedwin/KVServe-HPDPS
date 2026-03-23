@@ -5,7 +5,7 @@ Implements codec compression using libraries like nvCOMP
 
 import torch
 from kvserve_v1.compression.components import Codec
-from kvserve_v1.compression.codec import nvCOMPCodec
+from kvserve_v1.compression.codec.nvcomp_func import nvCOMPCodec
 
 class KVServeCodec(Codec):
     """

@@ -8,10 +8,10 @@ from typing import Optional, List, Tuple, Dict, Deque, Any
 from kvserve_v1.utils.logger import log_info, log_warning, log_error, log_debug
 from kvserve_v1.compression.config.duo_config.get_config import DuoConfigGenerator
 from kvserve_v1.compression.components import Quantizer
-from kvserve_v1.compression.quantizer import (
-    quantize, dequantize, 
+from kvserve_v1.compression.quantizer.quantizer_func import quantize, dequantize
+from kvserve_v1.compression.quantizer.split_func import (
     layer_split, layer_restore, layer_reconstruct,
-    head_split, head_restore, head_reconstruct, 
+    head_split, head_restore, head_reconstruct,
 )
 
 class KVServeQuantizer(Quantizer):
