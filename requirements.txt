@@ -1,0 +1,16 @@
+# Python version (environment constraint, not pip-installable here):
+# python>=3.9
+
+vllm>=0.18.0
+torch>=2.10.0
+transformers>=4.57.6
+tokenizers>=0.22.2
+numpy>=2.2.6
+pyzmq>=27.1.0
+triton>=3.6.0
+flashinfer>=0.6.6
+ray>=2.54.1
+safetensors>=0.7.0
+
+# Optional: needed only when using --lmeval-task in tests
+lm-eval>=0.4.0
