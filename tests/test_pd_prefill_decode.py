@@ -11,6 +11,7 @@ Chunked prefill is disabled to avoid multi-step KV accumulation complexity.
 import argparse
 import multiprocessing as mp
 import os
+import sys
 import time
 
 PROMPTS = [
@@ -18,6 +19,19 @@ PROMPTS = [
     "Machine learning is a branch of",
     "The first human to walk on the moon was",
 ]
+
+
+def _shutdown_vllm(llm) -> None:
+    """Best-effort shutdown so EngineCore subprocesses exit with the worker."""
+    if llm is None:
+        return
+    try:
+        engine_core = getattr(getattr(llm, "llm_engine", None), "engine_core", None)
+        shutdown = getattr(engine_core, "shutdown", None)
+        if callable(shutdown):
+            shutdown()
+    except Exception:
+        pass
 
 
 def run_prefill(model: str, prefill_gpu: int, kv_port: int,
@@ -47,12 +61,13 @@ def run_prefill(model: str, prefill_gpu: int, kv_port: int,
         enforce_eager=True,
         enable_chunked_prefill=False,
     )
-
-    sampling_params = SamplingParams(max_tokens=1, temperature=0)
-    llm.generate(PROMPTS, sampling_params=sampling_params)
-    print("[Prefill] Done generating — KV sent via NCCL.", flush=True)
-
-    prefill_done_event.set()
+    try:
+        sampling_params = SamplingParams(max_tokens=1, temperature=0)
+        llm.generate(PROMPTS, sampling_params=sampling_params)
+        print("[Prefill] Done generating — KV sent via NCCL.", flush=True)
+        prefill_done_event.set()
+    finally:
+        _shutdown_vllm(llm)
 
 
 def run_decode(model: str, decode_gpu: int, kv_port: int,
@@ -81,21 +96,23 @@ def run_decode(model: str, decode_gpu: int, kv_port: int,
         enforce_eager=True,
         enable_chunked_prefill=False,
     )
+    try:
+        print("[Decode] Engine ready, waiting for prefill to finish…", flush=True)
+        prefill_done_event.wait(timeout=300)
 
-    print("[Decode] Engine ready, waiting for prefill to finish…", flush=True)
-    prefill_done_event.wait(timeout=300)
+        sampling_params = SamplingParams(max_tokens=20, temperature=0)
+        outputs = llm.generate(PROMPTS, sampling_params=sampling_params)
 
-    sampling_params = SamplingParams(max_tokens=20, temperature=0)
-    outputs = llm.generate(PROMPTS, sampling_params=sampling_params)
+        results = []
+        for out in outputs:
+            text = out.outputs[0].text
+            results.append(text)
+            print(f"[Decode] prompt: {out.prompt!r}  →  {text!r}", flush=True)
 
-    results = []
-    for out in outputs:
-        text = out.outputs[0].text
-        results.append(text)
-        print(f"[Decode] prompt: {out.prompt!r}  →  {text!r}", flush=True)
-
-    result_queue.put(results)
-    print("[Decode] Done.", flush=True)
+        result_queue.put(results)
+        print("[Decode] Done.", flush=True)
+    finally:
+        _shutdown_vllm(llm)
 
 
 def main():
@@ -109,53 +126,70 @@ def main():
     args = parser.parse_args()
 
     mp.set_start_method("spawn", force=True)
-    manager = mp.Manager()
-    prefill_done = manager.Event()
-    result_queue = manager.Queue()
+    manager = None
+    p_prefill = p_decode = None
+    exit_code = 1
 
-    p_prefill = mp.Process(
-        target=run_prefill,
-        args=(args.model, args.prefill_gpu, args.kv_port,
-              prefill_done, args.gpu_mem_util),
-    )
-    p_decode = mp.Process(
-        target=run_decode,
-        args=(args.model, args.decode_gpu, args.kv_port,
-              prefill_done, result_queue, args.gpu_mem_util),
-    )
+    try:
+        manager = mp.Manager()
+        prefill_done = manager.Event()
+        result_queue = manager.Queue()
 
-    p_prefill.start()
-    p_decode.start()
+        p_prefill = mp.Process(
+            target=run_prefill,
+            args=(args.model, args.prefill_gpu, args.kv_port,
+                  prefill_done, args.gpu_mem_util),
+        )
+        p_decode = mp.Process(
+            target=run_decode,
+            args=(args.model, args.decode_gpu, args.kv_port,
+                  prefill_done, result_queue, args.gpu_mem_util),
+        )
 
-    deadline = time.time() + 600
-    results = None
-    while time.time() < deadline:
-        if not result_queue.empty():
-            results = result_queue.get()
-            break
-        if not p_decode.is_alive() and result_queue.empty():
-            print("[Main] Decode process exited unexpectedly.", flush=True)
-            break
-        time.sleep(1)
+        p_prefill.start()
+        p_decode.start()
 
-    p_prefill.terminate()
-    p_decode.terminate()
-    p_prefill.join(timeout=10)
-    p_decode.join(timeout=10)
+        deadline = time.time() + 600
+        results = None
+        while time.time() < deadline:
+            if not result_queue.empty():
+                results = result_queue.get()
+                break
+            if not p_decode.is_alive() and result_queue.empty():
+                print("[Main] Decode process exited unexpectedly.", flush=True)
+                break
+            time.sleep(1)
 
-    if results is None:
-        print("✗ FAIL: no results received", flush=True)
-        os._exit(1)
+        if results is None:
+            print("✗ FAIL: no results received", flush=True)
+        else:
+            n = len(results)
+            expected = len(PROMPTS)
+            if n == expected:
+                print(f"✓ PASS: {n}/{expected} decode requests completed",
+                      flush=True)
+                exit_code = 0
+            else:
+                print(f"✗ FAIL: only {n}/{expected} decode requests completed",
+                      flush=True)
+    finally:
+        for p in (p_prefill, p_decode):
+            if p is not None and p.is_alive():
+                p.terminate()
+        for p in (p_prefill, p_decode):
+            if p is not None:
+                p.join(timeout=30)
+        for p in (p_prefill, p_decode):
+            if p is not None and p.is_alive():
+                p.kill()
+                p.join(timeout=10)
+        if manager is not None:
+            try:
+                manager.shutdown()
+            except Exception:
+                pass
 
-    n = len(results)
-    expected = len(PROMPTS)
-    if n == expected:
-        print(f"✓ PASS: {n}/{expected} decode requests completed", flush=True)
-        os._exit(0)
-    else:
-        print(f"✗ FAIL: only {n}/{expected} decode requests completed",
-              flush=True)
-        os._exit(1)
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":

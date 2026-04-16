@@ -17,7 +17,9 @@ Usage examples:
 import argparse
 import multiprocessing as mp
 import os
+import sys
 import time
+import importlib.util
 
 PROMPTS = [
     (
@@ -92,6 +94,14 @@ CUSTOM_COMPRESSION_CFG = {
 }
 
 
+def _has_nvcomp_stack() -> bool:
+    """Check whether nvcomp runtime dependencies are available."""
+    return (
+        importlib.util.find_spec("cupy") is not None
+        and importlib.util.find_spec("nvidia.nvcomp") is not None
+    )
+
+
 def make_compression_spec(args) -> object:
     """Return the compression spec for kv_connector_extra_config["compression"]."""
     if args.mode == "default":
@@ -113,8 +123,31 @@ def make_compression_spec(args) -> object:
             },
         }
 
-    # custom (default)
-    return CUSTOM_COMPRESSION_CFG
+    # custom (default): gracefully degrade when nvcomp deps are unavailable.
+    if _has_nvcomp_stack():
+        return CUSTOM_COMPRESSION_CFG
+
+    degraded = dict(CUSTOM_COMPRESSION_CFG)
+    degraded["pipeline"] = ["quantizer"]
+    degraded.pop("codec_config", None)
+    print(
+        "[Main] cupy/nvcomp not found; falling back to custom quantizer-only mode.",
+        flush=True,
+    )
+    return degraded
+
+
+def _shutdown_vllm(llm) -> None:
+    """Best-effort shutdown so EngineCore subprocesses exit with the worker."""
+    if llm is None:
+        return
+    try:
+        engine_core = getattr(getattr(llm, "llm_engine", None), "engine_core", None)
+        shutdown = getattr(engine_core, "shutdown", None)
+        if callable(shutdown):
+            shutdown()
+    except Exception:
+        pass
 
 
 # ── Worker functions ────────────────────────────────────────────────────────
@@ -145,11 +178,13 @@ def run_prefill(model, prefill_gpu, kv_port, prefill_done_event, gpu_mem_util,
         enforce_eager=True,
         enable_chunked_prefill=False,
     )
-
-    sampling_params = SamplingParams(max_tokens=1, temperature=0)
-    llm.generate(PROMPTS, sampling_params=sampling_params)
-    print("[Prefill] Done — compressed KV sent.", flush=True)
-    prefill_done_event.set()
+    try:
+        sampling_params = SamplingParams(max_tokens=1, temperature=0)
+        llm.generate(PROMPTS, sampling_params=sampling_params)
+        print("[Prefill] Done — compressed KV sent.", flush=True)
+        prefill_done_event.set()
+    finally:
+        _shutdown_vllm(llm)
 
 
 def run_decode(model, decode_gpu, kv_port, prefill_done_event, result_queue,
@@ -178,32 +213,34 @@ def run_decode(model, decode_gpu, kv_port, prefill_done_event, result_queue,
         enforce_eager=True,
         enable_chunked_prefill=False,
     )
+    try:
+        print("[Decode] Engine ready, waiting for prefill…", flush=True)
+        prefill_done_event.wait(timeout=300)
 
-    print("[Decode] Engine ready, waiting for prefill…", flush=True)
-    prefill_done_event.wait(timeout=300)
+        sampling_params = SamplingParams(max_tokens=30, temperature=0)
+        outputs = llm.generate(PROMPTS, sampling_params=sampling_params)
 
-    sampling_params = SamplingParams(max_tokens=30, temperature=0)
-    outputs = llm.generate(PROMPTS, sampling_params=sampling_params)
+        results = []
+        for out in outputs:
+            text = out.outputs[0].text
+            results.append(text)
+            print(f"[Decode] {out.prompt!r}  ->  {text!r}", flush=True)
 
-    results = []
-    for out in outputs:
-        text = out.outputs[0].text
-        results.append(text)
-        print(f"[Decode] {out.prompt!r}  ->  {text!r}", flush=True)
-
-    result_queue.put(results)
-    print("[Decode] Done.", flush=True)
+        result_queue.put(results)
+        print("[Decode] Done.", flush=True)
+    finally:
+        _shutdown_vllm(llm)
 
 
 # ── Entry point ─────────────────────────────────────────────────────────────
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", default="/root/data/models/Qwen2.5-7B-Instruct")
+    parser.add_argument("--model", default="/data/gyd/models/Qwen2.5-7B-Instruct")
     parser.add_argument("--prefill-gpu", type=int, default=0)
     parser.add_argument("--decode-gpu", type=int, default=1)
     parser.add_argument("--kv-port", type=int, default=25002)
-    parser.add_argument("--gpu-mem-util", type=float, default=0.6)
+    parser.add_argument("--gpu-mem-util", type=float, default=0.7)
 
     # Compression mode
     parser.add_argument("--mode", choices=["custom", "default", "controller"],
@@ -232,53 +269,69 @@ def main():
     print(f"[Main] Compression mode: {args.mode}  spec={compression_spec!r}", flush=True)
 
     mp.set_start_method("spawn", force=True)
-    manager = mp.Manager()
-    prefill_done = manager.Event()
-    result_queue = manager.Queue()
+    manager = None
+    p_prefill = p_decode = None
+    exit_code = 1
 
-    p_prefill = mp.Process(
-        target=run_prefill,
-        args=(args.model, args.prefill_gpu, args.kv_port,
-              prefill_done, args.gpu_mem_util, compression_spec),
-    )
-    p_decode = mp.Process(
-        target=run_decode,
-        args=(args.model, args.decode_gpu, args.kv_port,
-              prefill_done, result_queue, args.gpu_mem_util, compression_spec),
-    )
+    try:
+        manager = mp.Manager()
+        prefill_done = manager.Event()
+        result_queue = manager.Queue()
 
-    p_prefill.start()
-    p_decode.start()
+        p_prefill = mp.Process(
+            target=run_prefill,
+            args=(args.model, args.prefill_gpu, args.kv_port,
+                  prefill_done, args.gpu_mem_util, compression_spec),
+        )
+        p_decode = mp.Process(
+            target=run_decode,
+            args=(args.model, args.decode_gpu, args.kv_port,
+                  prefill_done, result_queue, args.gpu_mem_util, compression_spec),
+        )
 
-    deadline = time.time() + 600
-    results = None
-    while time.time() < deadline:
-        if not result_queue.empty():
-            results = result_queue.get()
-            break
-        if not p_decode.is_alive() and result_queue.empty():
-            print("[Main] Decode process exited unexpectedly.", flush=True)
-            break
-        time.sleep(1)
+        p_prefill.start()
+        p_decode.start()
 
-    p_prefill.terminate()
-    p_decode.terminate()
-    p_prefill.join(timeout=10)
-    p_decode.join(timeout=10)
+        deadline = time.time() + 600
+        results = None
+        while time.time() < deadline:
+            if not result_queue.empty():
+                results = result_queue.get()
+                break
+            if not p_decode.is_alive() and result_queue.empty():
+                print("[Main] Decode process exited unexpectedly.", flush=True)
+                break
+            time.sleep(1)
 
-    if results is None:
-        print("FAIL: no results received", flush=True)
-        os._exit(1)
+        if results is None:
+            print("FAIL: no results received", flush=True)
+        else:
+            n = len(results)
+            expected = len(PROMPTS)
+            if n == expected:
+                print(f"PASS: {n}/{expected} compressed decode requests completed",
+                      flush=True)
+                exit_code = 0
+            else:
+                print(f"FAIL: only {n}/{expected} completed", flush=True)
+    finally:
+        for p in (p_prefill, p_decode):
+            if p is not None and p.is_alive():
+                p.terminate()
+        for p in (p_prefill, p_decode):
+            if p is not None:
+                p.join(timeout=30)
+        for p in (p_prefill, p_decode):
+            if p is not None and p.is_alive():
+                p.kill()
+                p.join(timeout=10)
+        if manager is not None:
+            try:
+                manager.shutdown()
+            except Exception:
+                pass
 
-    n = len(results)
-    expected = len(PROMPTS)
-    if n == expected:
-        print(f"PASS: {n}/{expected} compressed decode requests completed",
-              flush=True)
-        os._exit(0)
-    else:
-        print(f"FAIL: only {n}/{expected} completed", flush=True)
-        os._exit(1)
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":

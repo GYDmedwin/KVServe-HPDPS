@@ -7,6 +7,14 @@ import torch
 from kvserve_v1.compression.components import Codec
 from kvserve_v1.compression.codec.nvcomp_func import nvCOMPCodec
 
+_KVSERVE_CODEC_KEYS = frozenset({"codec_type", "nvcomp_algorithm"})
+
+
+def _nvcomp_codec_kwargs(kwargs: dict) -> dict:
+    """Strip KVServe routing keys before passing the rest to ``nvcomp.Codec``."""
+    return {k: v for k, v in kwargs.items() if k not in _KVSERVE_CODEC_KEYS}
+
+
 class KVServeCodec(Codec):
     """
     KVServe Codec implementation
@@ -38,7 +46,10 @@ class KVServeCodec(Codec):
         # Initialize the codec based on codec_type
         match self.codec_type:
             case "nvcomp":
-                self.codec = nvCOMPCodec(algorithm=self.nvcomp_algorithm, **kwargs)
+                self.codec = nvCOMPCodec(
+                    algorithm=self.nvcomp_algorithm,
+                    **_nvcomp_codec_kwargs(kwargs),
+                )
             case _:
                 raise ValueError(f"Invalid codec type: {self.codec_type}, expected one of: ['nvcomp']")
 
@@ -77,7 +88,10 @@ class KVServeCodec(Codec):
         # Reinitialize codec with updated parameters
         match self.codec_type:
             case "nvcomp":
-                self.codec = nvCOMPCodec(algorithm=self.nvcomp_algorithm, **kwargs)
+                self.codec = nvCOMPCodec(
+                    algorithm=self.nvcomp_algorithm,
+                    **_nvcomp_codec_kwargs(kwargs),
+                )
             case _:
                 raise ValueError(f"Invalid codec type: {self.codec_type}, expected one of: ['nvcomp']")
 

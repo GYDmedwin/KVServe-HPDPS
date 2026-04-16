@@ -12,6 +12,8 @@ triton>=3.6.0
 flashinfer-python>=0.6.6
 ray>=2.54.1
 safetensors>=0.7.0
+cupy-cuda12x
+nvidia-nvcomp-cu12
 
 # Optional: needed only when using --lmeval-task in tests
 lm-eval>=0.4.0

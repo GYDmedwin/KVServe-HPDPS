@@ -15,6 +15,8 @@ Key design decisions (learned from conversation log):
 
 import os
 import time
+import hashlib
+from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional
 
@@ -43,9 +45,21 @@ logger = init_logger(__name__)
 _LOAD_TIMEOUT_S = 60.0
 
 
+def _sorted_rids(rids: list[str] | set[str]) -> list[str]:
+    return sorted(rids)
+
+
+def _build_transfer_key(token_ids: list[int]) -> str:
+    """Build a stable, connector-owned transfer key from prompt tokens."""
+    token_str = ",".join(map(str, token_ids))
+    digest = hashlib.sha1(token_str.encode("utf-8")).hexdigest()[:16]
+    return f"tok-{len(token_ids)}-{digest}"
+
+
 @dataclass
 class ReqMeta:
     request_id: str
+    transfer_key: str
     token_ids: list[int]
     slot_mapping: torch.Tensor  # CPU LongTensor [num_tokens]
 
@@ -58,6 +72,7 @@ class CompressedKVConnectorMetadata(KVConnectorMetadata):
                     block_ids: list[int], block_size: int) -> None:
         self.requests.append(ReqMeta(
             request_id=request_id,
+            transfer_key=_build_transfer_key(token_ids),
             token_ids=token_ids,
             slot_mapping=make_slot_mapping(token_ids, block_ids, block_size),
         ))
@@ -80,9 +95,11 @@ class CompressedKVConnector(KVConnectorBase_V1):
         # SCHEDULER side: consumer tracks which requests need KV load
         self._requests_need_load: dict[str, tuple["Request", list[int]]] = {}
 
-        # WORKER side: consumer buffers received (layer_names, tensor) until start_load_kv
+        # WORKER side: consumer buffers received by transfer_key.
+        # Queue avoids overwrite under duplicate prompts/high concurrency.
         self._worker_received_kv: dict[
-            str, tuple[list[str], torch.Tensor]] = {}
+            str, deque[tuple[list[str], torch.Tensor]]
+        ] = defaultdict(deque)
 
         # WORKER side: producer accumulates per-layer KV before sending
         self._layer_buffers: dict[str, dict[str, torch.Tensor]] = {}
@@ -120,31 +137,58 @@ class CompressedKVConnector(KVConnectorBase_V1):
 
         newly_recv = self._transport.drain_received()
         if newly_recv:
-            self._worker_received_kv.update(newly_recv)
+            logger.info(
+                "[Connector][RID][RECV] drained from transport: %s",
+                _sorted_rids(list(newly_recv.keys())),
+            )
+            for transfer_key, payload in newly_recv.items():
+                self._worker_received_kv[transfer_key].append(payload)
 
         meta = self._get_connector_metadata()
         if not isinstance(meta, CompressedKVConnectorMetadata):
             return
 
+        expected_rids = [req_meta.request_id for req_meta in meta.requests]
+        expected_keys = [req_meta.transfer_key for req_meta in meta.requests]
+        logger.info(
+            "[Connector][RID][RECV] expected this step: %s; buffered: %s",
+            _sorted_rids(expected_rids),
+            _sorted_rids(list(self._worker_received_kv.keys())),
+        )
+        logger.info(
+            "[Connector][RID][RECV] expected keys this step: %s",
+            _sorted_rids(expected_keys),
+        )
+
         for req_meta in meta.requests:
             rid = req_meta.request_id
+            transfer_key = req_meta.transfer_key
 
             deadline = time.monotonic() + _LOAD_TIMEOUT_S
-            while rid not in self._worker_received_kv:
+            while not self._worker_received_kv.get(transfer_key):
                 newly_recv = self._transport.drain_received()
                 if newly_recv:
-                    self._worker_received_kv.update(newly_recv)
-                if rid in self._worker_received_kv:
+                    logger.info(
+                        "[Connector][RID][RECV] drained while waiting: %s",
+                        _sorted_rids(list(newly_recv.keys())),
+                    )
+                    for key, payload in newly_recv.items():
+                        self._worker_received_kv[key].append(payload)
+                if self._worker_received_kv.get(transfer_key):
                     break
                 if time.monotonic() > deadline:
-                    logger.warning("[Connector] Timeout waiting KV for %s", rid)
+                    logger.warning(
+                        "[Connector] Timeout waiting KV for rid=%s key=%s",
+                        rid, transfer_key)
                     break
                 time.sleep(0.005)
 
-            if rid not in self._worker_received_kv:
+            if not self._worker_received_kv.get(transfer_key):
                 continue
 
-            layer_names, payload = self._worker_received_kv.pop(rid)
+            layer_names, payload = self._worker_received_kv[transfer_key].popleft()
+            if not self._worker_received_kv[transfer_key]:
+                self._worker_received_kv.pop(transfer_key, None)
 
             # Decompress if needed
             if is_compressed_layer_names(layer_names):
@@ -204,6 +248,15 @@ class CompressedKVConnector(KVConnectorBase_V1):
             return
 
         current_rids = {req_meta.request_id for req_meta in meta.requests}
+        current_keys = {req_meta.transfer_key for req_meta in meta.requests}
+        logger.info(
+            "[Connector][RID][SEND] scheduled this step: %s",
+            _sorted_rids(current_rids),
+        )
+        logger.info(
+            "[Connector][RID][SEND] scheduled keys this step: %s",
+            _sorted_rids(current_keys),
+        )
 
         stale = set(self._layer_buffers) - current_rids
         if stale:
@@ -213,6 +266,7 @@ class CompressedKVConnector(KVConnectorBase_V1):
 
         for req_meta in meta.requests:
             rid = req_meta.request_id
+            transfer_key = req_meta.transfer_key
             if rid not in self._layer_buffers:
                 continue
             layer_kv = self._layer_buffers.pop(rid)
@@ -230,7 +284,12 @@ class CompressedKVConnector(KVConnectorBase_V1):
                 if compressed is not None:
                     payload = pack_compressed(compressed)
                     send_names = add_sentinel(layer_names)
-                    self._transport.send(rid, send_names, payload)
+                    logger.info(
+                        "[Connector][RID][SEND] sending compressed rid=%s key=%s "
+                        "layers=%d payload_shape=%s",
+                        rid, transfer_key, len(layer_names), list(payload.shape),
+                    )
+                    self._transport.send(transfer_key, send_names, payload)
                     elapsed_ms = (time.monotonic() - t0) * 1e3
                     compressor.update_controller(rid, elapsed_ms)
                     logger.debug(
@@ -244,7 +303,11 @@ class CompressedKVConnector(KVConnectorBase_V1):
                     "[Connector] Compression returned None for %s, "
                     "falling back to raw send", rid)
 
-            self._transport.send(rid, layer_names, stacked)
+            logger.info(
+                "[Connector][RID][SEND] sending raw rid=%s key=%s layers=%d shape=%s",
+                rid, transfer_key, len(layer_names), list(stacked.shape),
+            )
+            self._transport.send(transfer_key, layer_names, stacked)
             logger.debug("[Connector] Sent raw KV for %s (%d layers)",
                          rid, len(layer_names))
 

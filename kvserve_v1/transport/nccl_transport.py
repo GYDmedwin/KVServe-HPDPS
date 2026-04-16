@@ -152,7 +152,7 @@ class NcclTransport:
                 cudaStream_t(self._send_stream.cuda_stream),
             )
         self._send_stream.synchronize()
-        logger.debug("[NcclTransport] Sent KV for %s shape=%s",
+        logger.debug("[NcclTransport][RID][SEND] sent rid=%s shape=%s",
                      request_id, list(tensor.shape))
 
     # ── Consumer-side ──────────────────────────────────────────────────────
@@ -217,8 +217,9 @@ class NcclTransport:
 
                     rid = msg["request_id"]
                     layer_names = msg["layer_names"]
-                    logger.debug("[NcclTransport] Received KV for %s shape=%s",
-                                 rid, list(tensor.shape))
+                    logger.debug(
+                        "[NcclTransport][RID][RECV] received rid=%s shape=%s",
+                        rid, list(tensor.shape))
                     with self._lock:
                         self._received[rid] = (layer_names, tensor)
 
