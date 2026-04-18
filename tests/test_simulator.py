@@ -31,7 +31,7 @@ from typing import Optional
 # Configuration constants
 # ---------------------------------------------------------------------------
 
-MODEL_PATH = "/root/data/models/Qwen2.5-7B-Instruct"
+MODEL_PATH = "/data/gyd/models/Qwen2.5-7B-Instruct"
 GPU_MEMORY_UTILIZATION = 0.6
 MAX_MODEL_LEN = 4096
 DEFAULT_NUM_REQUESTS = 10

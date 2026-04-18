@@ -8,7 +8,7 @@ Key design decisions (learned from conversation log):
 - get_num_new_matched_tokens returns (n, False) — no WAITING_FOR_REMOTE_KVS.
 - start_load_kv proactively drains transport; WORKER has its own _worker_received_kv.
 - NCCL recv is only called on-demand (after ZMQ signal) — safe for CUDA graph capture.
-- build_connector_meta clears _requests_need_load at end.
+- build_connector_meta must not drop pending decode loads across steps.
 - Compression: EasyDist-packed uint8 tensor sent as a single NCCL payload.
   Compressed messages are identified by a "__compressed__" sentinel in layer_names.
 """
@@ -67,12 +67,18 @@ class ReqMeta:
 @dataclass
 class CompressedKVConnectorMetadata(KVConnectorMetadata):
     requests: list[ReqMeta] = field(default_factory=list)
+    # Per-step duplicate disambiguation for identical prompts.
+    _dup_counts: dict[str, int] = field(default_factory=dict, repr=False)
 
     def add_request(self, request_id: str, token_ids: list[int],
                     block_ids: list[int], block_size: int) -> None:
+        base_key = _build_transfer_key(token_ids)
+        dup_idx = self._dup_counts.get(base_key, 0)
+        self._dup_counts[base_key] = dup_idx + 1
+        transfer_key = f"{base_key}-d{dup_idx}"
         self.requests.append(ReqMeta(
             request_id=request_id,
-            transfer_key=_build_transfer_key(token_ids),
+            transfer_key=transfer_key,
             token_ids=token_ids,
             slot_mapping=make_slot_mapping(token_ids, block_ids, block_size),
         ))
@@ -95,8 +101,9 @@ class CompressedKVConnector(KVConnectorBase_V1):
         # SCHEDULER side: consumer tracks which requests need KV load
         self._requests_need_load: dict[str, tuple["Request", list[int]]] = {}
 
-        # WORKER side: consumer buffers received by transfer_key.
-        # Queue avoids overwrite under duplicate prompts/high concurrency.
+        # WORKER side: buffers by transfer_key (stable across P/D; same as wire key).
+        # Deque: duplicate prompts share a key; producer/consumer iterate meta.requests
+        # in the same order so FIFO matches.
         self._worker_received_kv: dict[
             str, deque[tuple[list[str], torch.Tensor]]
         ] = defaultdict(deque)
@@ -141,8 +148,9 @@ class CompressedKVConnector(KVConnectorBase_V1):
                 "[Connector][RID][RECV] drained from transport: %s",
                 _sorted_rids(list(newly_recv.keys())),
             )
-            for transfer_key, payload in newly_recv.items():
-                self._worker_received_kv[transfer_key].append(payload)
+            for transfer_key, payloads in newly_recv.items():
+                for payload in payloads:
+                    self._worker_received_kv[transfer_key].append(payload)
 
         meta = self._get_connector_metadata()
         if not isinstance(meta, CompressedKVConnectorMetadata):
@@ -156,7 +164,7 @@ class CompressedKVConnector(KVConnectorBase_V1):
             _sorted_rids(list(self._worker_received_kv.keys())),
         )
         logger.info(
-            "[Connector][RID][RECV] expected keys this step: %s",
+            "[Connector][RID][RECV] expected transfer_keys this step: %s",
             _sorted_rids(expected_keys),
         )
 
@@ -172,8 +180,9 @@ class CompressedKVConnector(KVConnectorBase_V1):
                         "[Connector][RID][RECV] drained while waiting: %s",
                         _sorted_rids(list(newly_recv.keys())),
                     )
-                    for key, payload in newly_recv.items():
-                        self._worker_received_kv[key].append(payload)
+                    for key, payloads in newly_recv.items():
+                        for payload in payloads:
+                            self._worker_received_kv[key].append(payload)
                 if self._worker_received_kv.get(transfer_key):
                     break
                 if time.monotonic() > deadline:
@@ -362,8 +371,10 @@ class CompressedKVConnector(KVConnectorBase_V1):
                         block_size=self._block_size,
                     )
 
-        # Clear stale entries (cancelled/preempted requests never scheduled).
-        self._requests_need_load.clear()
+        # Do NOT clear _requests_need_load here. vLLM may only put part of the
+        # batch in scheduled_new_reqs on a given step; clearing would erase
+        # block_ids for requests not yet included, and update_state_after_alloc
+        # does not run again for them → KV load timeouts when N grows (e.g. 3 vs 13).
         return meta
 
     def request_finished(
@@ -371,6 +382,8 @@ class CompressedKVConnector(KVConnectorBase_V1):
         request: "Request",
         block_ids: list[int],
     ) -> tuple[bool, Optional[dict[str, Any]]]:
+        if not self.is_producer:
+            self._requests_need_load.pop(request.request_id, None)
         return False, None
 
     # ── Internal ───────────────────────────────────────────────────────────

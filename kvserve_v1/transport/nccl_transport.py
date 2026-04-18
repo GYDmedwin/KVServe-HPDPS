@@ -25,7 +25,7 @@ torch.cuda.synchronize() during CUDA graph capture is not blocked.
 
 import ctypes
 import threading
-from collections import deque
+from collections import defaultdict, deque
 from typing import Optional
 
 import msgpack
@@ -90,7 +90,10 @@ class NcclTransport:
                         port)
 
             self._lock = threading.Lock()
-            self._received: dict[str, tuple[list[str], torch.Tensor]] = {}
+            # ZMQ "request_id" is the connector wire key (transfer_key from connector).
+            # Multiple PUTs for the same key append in order; deque preserves FIFO.
+            self._received: dict[str, deque[tuple[list[str], torch.Tensor]]] = (
+                defaultdict(deque))
             self._recv_stream = torch.cuda.Stream(device=self.device)
 
             # Listener handles both INIT and DATA messages
@@ -157,11 +160,13 @@ class NcclTransport:
 
     # ── Consumer-side ──────────────────────────────────────────────────────
 
-    def drain_received(self) -> dict[str, tuple[list[str], torch.Tensor]]:
-        """Atomically drain all newly received KV tensors (GPU tensors)."""
+    def drain_received(
+        self,
+    ) -> dict[str, list[tuple[list[str], torch.Tensor]]]:
+        """Drain received payloads; each key maps to an ordered list (FIFO)."""
         assert not self.is_sender
         with self._lock:
-            result = dict(self._received)
+            result = {k: list(v) for k, v in self._received.items() if v}
             self._received.clear()
         return result
 
@@ -221,7 +226,7 @@ class NcclTransport:
                         "[NcclTransport][RID][RECV] received rid=%s shape=%s",
                         rid, list(tensor.shape))
                     with self._lock:
-                        self._received[rid] = (layer_names, tensor)
+                        self._received[rid].append((layer_names, tensor))
 
             except Exception as e:
                 logger.error("[NcclTransport] listen_loop error: %s", e)
