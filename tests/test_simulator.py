@@ -34,9 +34,11 @@ from typing import Optional
 MODEL_PATH = "/data/gyd/models/Qwen2.5-7B-Instruct"
 GPU_MEMORY_UTILIZATION = 0.6
 MAX_MODEL_LEN = 4096
+MAX_PROMPT_TOKENS = MAX_MODEL_LEN - 128
 DEFAULT_NUM_REQUESTS = 10
 DEFAULT_KV_PORT = 25010
 OUTPUT_DIR = "./sim_outputs"
+MAX_PROMPT_CHARS = 40_000
 
 CUSTOM_COMPRESSION_CFG = {
     "enabled": True,
@@ -91,7 +93,8 @@ _BUILTIN_PROMPTS = [
 # ---------------------------------------------------------------------------
 
 def load_lmeval_prompts(task_name: str, num_requests: int,
-                        offline: bool = True) -> list:
+                        offline: bool = True,
+                        max_prompt_chars: int = MAX_PROMPT_CHARS) -> list:
     """Load prompts from an lm-eval 0.4 task.
 
     Tries test -> validation -> train splits in order; uses doc_to_text to
@@ -146,11 +149,24 @@ def load_lmeval_prompts(task_name: str, num_requests: int,
     for doc in docs:
         if len(prompts) >= num_requests:
             break
-        try:
-            prompts.append(task.doc_to_text(doc))
-        except Exception:
-            if isinstance(doc, str):
-                prompts.append(doc)
+        text = ""
+        # doc_to_text returns empty for perplexity tasks (e.g. wikitext); fall back
+        for getter in (
+            lambda: task.doc_to_text(doc),
+            lambda: task.doc_to_target(doc),
+            lambda: doc.get("text", "") if isinstance(doc, dict) else str(doc),
+        ):
+            try:
+                candidate = getter()
+                if isinstance(candidate, str) and candidate.strip():
+                    text = candidate
+                    break
+            except Exception:
+                continue
+        if text:
+            if max_prompt_chars > 0 and len(text) > max_prompt_chars:
+                text = text[:max_prompt_chars]
+            prompts.append(text)
 
     if not prompts:
         raise RuntimeError(f"Task '{task_name}': could not convert any document to text.")
@@ -158,14 +174,64 @@ def load_lmeval_prompts(task_name: str, num_requests: int,
 
 
 def build_prompts(lmeval_task: Optional[str], num_requests: int,
-                  offline: bool = True) -> list:
+                  offline: bool = True,
+                  max_prompt_chars: int = MAX_PROMPT_CHARS) -> list:
     if lmeval_task:
-        prompts = load_lmeval_prompts(lmeval_task, num_requests, offline=offline)
+        prompts = load_lmeval_prompts(
+            lmeval_task,
+            num_requests,
+            offline=offline,
+            max_prompt_chars=max_prompt_chars,
+        )
         print(f"[Prompts] Loaded {len(prompts)} docs from lm-eval '{lmeval_task}'")
     else:
         prompts = [_BUILTIN_PROMPTS[i % len(_BUILTIN_PROMPTS)] for i in range(num_requests)]
         print(f"[Prompts] Using {len(prompts)} built-in prompts")
+    if prompts:
+        lengths = [len(p) for p in prompts]
+        print(
+            f"[Prompts] chars min/avg/max = "
+            f"{min(lengths)}/{sum(lengths)/len(lengths):.1f}/{max(lengths)}"
+        )
+    prompts = _truncate_prompts_by_tokens(prompts, MAX_PROMPT_TOKENS)
     return prompts
+
+
+def _truncate_prompts_by_tokens(prompts: list[str], max_prompt_tokens: int) -> list[str]:
+    """Bound prompt token length to avoid very slow rendering/tokenization."""
+    if not prompts or max_prompt_tokens <= 0:
+        return prompts
+
+    try:
+        from transformers import AutoTokenizer
+        tokenizer = AutoTokenizer.from_pretrained(
+            MODEL_PATH,
+            trust_remote_code=False,
+        )
+    except Exception as e:
+        print(f"[Prompts] WARN: tokenizer unavailable, skip token truncation ({e})")
+        return prompts
+
+    truncated_prompts: list[str] = []
+    token_lengths: list[int] = []
+    for prompt in prompts:
+        token_ids = tokenizer.encode(prompt, add_special_tokens=False)
+        if len(token_ids) > max_prompt_tokens:
+            token_ids = token_ids[:max_prompt_tokens]
+            prompt = tokenizer.decode(token_ids, skip_special_tokens=True)
+        if prompt and prompt.strip():
+            truncated_prompts.append(prompt)
+            token_lengths.append(len(token_ids))
+
+    if not truncated_prompts:
+        raise RuntimeError("All prompts became empty after token truncation.")
+
+    print(
+        f"[Prompts] tokens min/avg/max = "
+        f"{min(token_lengths)}/{sum(token_lengths)/len(token_lengths):.1f}/{max(token_lengths)} "
+        f"(cap={max_prompt_tokens})"
+    )
+    return truncated_prompts
 
 
 # ---------------------------------------------------------------------------
@@ -390,8 +456,12 @@ def main():
     args = parser.parse_args()
 
     compression_spec = make_compression_spec(args)
-    prompts = build_prompts(args.lmeval_task, args.num_requests,
-                            offline=not args.online)
+    prompts = build_prompts(
+        args.lmeval_task,
+        args.num_requests,
+        offline=not args.online,
+        max_prompt_chars=MAX_PROMPT_CHARS,
+    )
 
     print(f"\n{'='*60}")
     print("PD SEPARATION TEST")
