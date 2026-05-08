@@ -79,6 +79,7 @@ class NcclTransport:
             # PUT_ASYNC: background thread does actual ncclSend
             self._send_queue_cv = threading.Condition()
             self._send_queue: deque = deque()
+            self._send_inflight = 0
             self._send_thread = threading.Thread(
                 target=self._send_loop, daemon=True, name="nccl-send")
             self._send_thread.start()
@@ -107,16 +108,19 @@ class NcclTransport:
              stacked_kv: torch.Tensor) -> None:
         """Queue KV tensor for NCCL send (PUT_ASYNC: non-blocking)."""
         assert self.is_sender
-        tensor = stacked_kv.to(self.device).contiguous()
+        with torch.cuda.device(self.device):
+            tensor = stacked_kv.to(self.device).contiguous()
+            ready_event = torch.cuda.Event()
+            ready_event.record(torch.cuda.current_stream(self.device))
         with self._send_queue_cv:
-            self._send_queue.append((request_id, layer_names, tensor))
+            self._send_queue.append((request_id, layer_names, tensor, ready_event))
             self._send_queue_cv.notify()
 
     def wait_for_sent(self) -> None:
-        """Block until all queued sends have been dispatched."""
+        """Block until all queued and in-flight sends have completed."""
         assert self.is_sender
         with self._send_queue_cv:
-            while self._send_queue:
+            while self._send_queue or self._send_inflight:
                 self._send_queue_cv.wait()
 
     def _send_loop(self) -> None:
@@ -125,12 +129,17 @@ class NcclTransport:
                 while not self._send_queue:
                     self._send_queue_cv.wait()
                 item = self._send_queue.popleft()
-                if not self._send_queue:
-                    self._send_queue_cv.notify()
-            self._send_one(*item)
+                self._send_inflight += 1
+            try:
+                self._send_one(*item)
+            finally:
+                with self._send_queue_cv:
+                    self._send_inflight -= 1
+                    if not self._send_queue and not self._send_inflight:
+                        self._send_queue_cv.notify_all()
 
     def _send_one(self, request_id: str, layer_names: list[str],
-                  tensor: torch.Tensor) -> None:
+                  tensor: torch.Tensor, ready_event: torch.cuda.Event) -> None:
         meta = {
             "cmd": "PUT",
             "request_id": request_id,
@@ -146,6 +155,7 @@ class NcclTransport:
             return
 
         with torch.cuda.stream(self._send_stream):
+            self._send_stream.wait_event(ready_event)
             self.nccl.ncclSend(
                 buffer_type(tensor.data_ptr()),
                 tensor.numel(),

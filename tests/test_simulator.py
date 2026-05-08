@@ -279,8 +279,8 @@ def make_compression_spec(args) -> object:
 # Worker processes
 # ---------------------------------------------------------------------------
 
-def run_prefill(model, prefill_gpu, kv_port, prefill_done_event,
-                gpu_mem_util, compression_spec, prompts):
+def run_prefill(model, prefill_gpu, kv_port, gpu_mem_util,
+                compression_spec, prompts):
     os.environ["CUDA_VISIBLE_DEVICES"] = str(prefill_gpu)
 
     from vllm import LLM, SamplingParams
@@ -301,16 +301,24 @@ def run_prefill(model, prefill_gpu, kv_port, prefill_done_event,
         kv_transfer_config=kv_cfg,
         gpu_memory_utilization=gpu_mem_util,
         max_model_len=MAX_MODEL_LEN,
+        enable_prefix_caching=False,
         enforce_eager=True,
         enable_chunked_prefill=False,
     )
-    llm.generate(prompts, sampling_params=SamplingParams(max_tokens=1, temperature=0))
+    prefill_params = [
+        SamplingParams(
+            max_tokens=1,
+            temperature=0,
+            extra_args={"kv_transfer_params": {"transfer_id": f"sim-{i}"}},
+        )
+        for i in range(len(prompts))
+    ]
+    llm.generate(prompts, sampling_params=prefill_params)
     print("[Prefill] Done - KV sent.", flush=True)
-    prefill_done_event.set()
 
 
-def run_decode(model, decode_gpu, kv_port, prefill_done_event, result_queue,
-               gpu_mem_util, compression_spec, prompts, max_tokens, mode_label):
+def run_decode(model, decode_gpu, kv_port, result_queue, gpu_mem_util,
+               compression_spec, prompts, max_tokens, mode_label):
     os.environ["CUDA_VISIBLE_DEVICES"] = str(decode_gpu)
 
     from vllm import LLM, SamplingParams
@@ -331,16 +339,23 @@ def run_decode(model, decode_gpu, kv_port, prefill_done_event, result_queue,
         kv_transfer_config=kv_cfg,
         gpu_memory_utilization=gpu_mem_util,
         max_model_len=MAX_MODEL_LEN,
+        enable_prefix_caching=False,
         enforce_eager=True,
         enable_chunked_prefill=False,
     )
 
-    print("[Decode] Engine ready, waiting for prefill...", flush=True)
-    prefill_done_event.wait(timeout=300)
+    print("[Decode] Engine ready, starting decode requests...", flush=True)
 
     t_start = time.monotonic()
-    outputs = llm.generate(
-        prompts, sampling_params=SamplingParams(max_tokens=max_tokens, temperature=0))
+    decode_params = [
+        SamplingParams(
+            max_tokens=max_tokens,
+            temperature=0,
+            extra_args={"kv_transfer_params": {"transfer_id": f"sim-{i}"}},
+        )
+        for i in range(len(prompts))
+    ]
+    outputs = llm.generate(prompts, sampling_params=decode_params)
     total_ms = (time.monotonic() - t_start) * 1e3
     per_req_ms = total_ms / max(len(prompts), 1)
 
@@ -477,23 +492,24 @@ def main():
 
     mp.set_start_method("spawn", force=True)
     manager = mp.Manager()
-    prefill_done = manager.Event()
     result_queue = manager.Queue()
 
     p_prefill = mp.Process(
         target=run_prefill,
-        args=(args.model, args.prefill_gpu, args.kv_port,
-              prefill_done, args.gpu_mem_util, compression_spec, prompts),
+        args=(args.model, args.prefill_gpu, args.kv_port, args.gpu_mem_util,
+              compression_spec, prompts),
     )
     p_decode = mp.Process(
         target=run_decode,
-        args=(args.model, args.decode_gpu, args.kv_port,
-              prefill_done, result_queue, args.gpu_mem_util,
-              compression_spec, prompts, args.max_tokens, args.mode),
+        args=(args.model, args.decode_gpu, args.kv_port, result_queue,
+              args.gpu_mem_util, compression_spec, prompts, args.max_tokens,
+              args.mode),
     )
 
-    p_prefill.start()
+    # Start decode first so the consumer transport is ready to receive as
+    # prefill begins producing KV. The connector handles per-request waiting.
     p_decode.start()
+    p_prefill.start()
 
     results = None
     deadline = time.time() + 600

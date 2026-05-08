@@ -15,7 +15,6 @@ Key design decisions (learned from conversation log):
 
 import os
 import time
-import hashlib
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional
@@ -30,8 +29,9 @@ from vllm.v1.core.sched.output import SchedulerOutput
 from kvserve_v1.compression.manager import (
     add_sentinel, is_compressed_layer_names, pack_compressed,
     strip_sentinel, unpack_compressed)
-from kvserve_v1.utils.kv_utils import (extract_kv_from_layer,
-                                        inject_kv_into_layer, make_slot_mapping)
+from kvserve_v1.utils.kv_utils import (
+    extract_kv_from_layer_by_blocks, inject_kv_into_layer_by_blocks,
+    make_slot_mapping)
 
 if TYPE_CHECKING:
     from vllm.attention.backends.abstract import AttentionMetadata
@@ -49,37 +49,26 @@ def _sorted_rids(rids: list[str] | set[str]) -> list[str]:
     return sorted(rids)
 
 
-def _build_transfer_key(token_ids: list[int]) -> str:
-    """Build a stable, connector-owned transfer key from prompt tokens."""
-    token_str = ",".join(map(str, token_ids))
-    digest = hashlib.sha1(token_str.encode("utf-8")).hexdigest()[:16]
-    return f"tok-{len(token_ids)}-{digest}"
-
-
 @dataclass
 class ReqMeta:
     request_id: str
-    transfer_key: str
+    transfer_id: str
     token_ids: list[int]
+    block_ids: list[int]
     slot_mapping: torch.Tensor  # CPU LongTensor [num_tokens]
 
 
 @dataclass
 class CompressedKVConnectorMetadata(KVConnectorMetadata):
     requests: list[ReqMeta] = field(default_factory=list)
-    # Per-step duplicate disambiguation for identical prompts.
-    _dup_counts: dict[str, int] = field(default_factory=dict, repr=False)
 
-    def add_request(self, request_id: str, token_ids: list[int],
+    def add_request(self, request_id: str, transfer_id: str, token_ids: list[int],
                     block_ids: list[int], block_size: int) -> None:
-        base_key = _build_transfer_key(token_ids)
-        dup_idx = self._dup_counts.get(base_key, 0)
-        self._dup_counts[base_key] = dup_idx + 1
-        transfer_key = f"{base_key}-d{dup_idx}"
         self.requests.append(ReqMeta(
             request_id=request_id,
-            transfer_key=transfer_key,
+            transfer_id=transfer_id,
             token_ids=token_ids,
+            block_ids=block_ids,
             slot_mapping=make_slot_mapping(token_ids, block_ids, block_size),
         ))
 
@@ -100,10 +89,14 @@ class CompressedKVConnector(KVConnectorBase_V1):
 
         # SCHEDULER side: consumer tracks which requests need KV load
         self._requests_need_load: dict[str, tuple["Request", list[int]]] = {}
+        # request_id -> transfer_id (shared between P/D). If not provided by
+        # upstream router, falls back to request_id.
+        self._request_transfer_ids: dict[str, str] = {}
+        # SCHEDULER side: producer chunked-prefill accumulation state.
+        # req_id -> (accumulated block_ids, full prompt_token_ids)
+        self.chunked_prefill: dict[str, tuple[list[int], list[int]]] = {}
 
-        # WORKER side: buffers by transfer_key (stable across P/D; same as wire key).
-        # Deque: duplicate prompts share a key; producer/consumer iterate meta.requests
-        # in the same order so FIFO matches.
+        # WORKER side: received buffers keyed by transfer_id.
         self._worker_received_kv: dict[
             str, deque[tuple[list[str], torch.Tensor]]
         ] = defaultdict(deque)
@@ -148,32 +141,27 @@ class CompressedKVConnector(KVConnectorBase_V1):
                 "[Connector][RID][RECV] drained from transport: %s",
                 _sorted_rids(list(newly_recv.keys())),
             )
-            for transfer_key, payloads in newly_recv.items():
+            for request_id, payloads in newly_recv.items():
                 for payload in payloads:
-                    self._worker_received_kv[transfer_key].append(payload)
+                    self._worker_received_kv[request_id].append(payload)
 
         meta = self._get_connector_metadata()
         if not isinstance(meta, CompressedKVConnectorMetadata):
             return
 
         expected_rids = [req_meta.request_id for req_meta in meta.requests]
-        expected_keys = [req_meta.transfer_key for req_meta in meta.requests]
         logger.info(
             "[Connector][RID][RECV] expected this step: %s; buffered: %s",
             _sorted_rids(expected_rids),
             _sorted_rids(list(self._worker_received_kv.keys())),
         )
-        logger.info(
-            "[Connector][RID][RECV] expected transfer_keys this step: %s",
-            _sorted_rids(expected_keys),
-        )
 
         for req_meta in meta.requests:
             rid = req_meta.request_id
-            transfer_key = req_meta.transfer_key
+            transfer_id = req_meta.transfer_id
 
             deadline = time.monotonic() + _LOAD_TIMEOUT_S
-            while not self._worker_received_kv.get(transfer_key):
+            while not self._worker_received_kv.get(transfer_id):
                 newly_recv = self._transport.drain_received()
                 if newly_recv:
                     logger.info(
@@ -183,21 +171,21 @@ class CompressedKVConnector(KVConnectorBase_V1):
                     for key, payloads in newly_recv.items():
                         for payload in payloads:
                             self._worker_received_kv[key].append(payload)
-                if self._worker_received_kv.get(transfer_key):
+                if self._worker_received_kv.get(transfer_id):
                     break
                 if time.monotonic() > deadline:
                     logger.warning(
-                        "[Connector] Timeout waiting KV for rid=%s key=%s",
-                        rid, transfer_key)
+                        "[Connector] Timeout waiting KV for rid=%s transfer_id=%s",
+                        rid, transfer_id)
                     break
                 time.sleep(0.005)
 
-            if not self._worker_received_kv.get(transfer_key):
+            if not self._worker_received_kv.get(transfer_id):
                 continue
 
-            layer_names, payload = self._worker_received_kv[transfer_key].popleft()
-            if not self._worker_received_kv[transfer_key]:
-                self._worker_received_kv.pop(transfer_key, None)
+            layer_names, payload = self._worker_received_kv[transfer_id].popleft()
+            if not self._worker_received_kv[transfer_id]:
+                self._worker_received_kv.pop(transfer_id, None)
 
             # Decompress if needed
             if is_compressed_layer_names(layer_names):
@@ -226,8 +214,8 @@ class CompressedKVConnector(KVConnectorBase_V1):
                 if kv_cache is None:
                     continue
                 kv_cache_layer = kv_cache[forward_context.virtual_engine]
-                inject_kv_into_layer(
-                    kv_cache_layer, stacked_kv[i], req_meta.slot_mapping)
+                inject_kv_into_layer_by_blocks(
+                    kv_cache_layer, stacked_kv[i], req_meta.block_ids, rid)
 
     def wait_for_layer_load(self, layer_name: str) -> None:
         return
@@ -245,7 +233,7 @@ class CompressedKVConnector(KVConnectorBase_V1):
             rid = req_meta.request_id
             if rid not in self._layer_buffers:
                 self._layer_buffers[rid] = {}
-            extracted = extract_kv_from_layer(kv_layer, req_meta.slot_mapping)
+            extracted = extract_kv_from_layer_by_blocks(kv_layer, req_meta.block_ids)
             self._layer_buffers[rid][layer_name] = extracted
 
     def wait_for_save(self) -> None:
@@ -257,14 +245,9 @@ class CompressedKVConnector(KVConnectorBase_V1):
             return
 
         current_rids = {req_meta.request_id for req_meta in meta.requests}
-        current_keys = {req_meta.transfer_key for req_meta in meta.requests}
         logger.info(
             "[Connector][RID][SEND] scheduled this step: %s",
             _sorted_rids(current_rids),
-        )
-        logger.info(
-            "[Connector][RID][SEND] scheduled keys this step: %s",
-            _sorted_rids(current_keys),
         )
 
         stale = set(self._layer_buffers) - current_rids
@@ -275,7 +258,7 @@ class CompressedKVConnector(KVConnectorBase_V1):
 
         for req_meta in meta.requests:
             rid = req_meta.request_id
-            transfer_key = req_meta.transfer_key
+            transfer_id = req_meta.transfer_id
             if rid not in self._layer_buffers:
                 continue
             layer_kv = self._layer_buffers.pop(rid)
@@ -284,7 +267,7 @@ class CompressedKVConnector(KVConnectorBase_V1):
 
             layer_names = sorted(layer_kv.keys())
             stacked = torch.stack([layer_kv[n] for n in layer_names], dim=0)
-            # stacked: [num_layers, 2, num_tokens, kv_dim] on GPU
+            # stacked: [num_layers, 2, num_blocks, block_size, num_kv_heads, head_size]
 
             compressor = self._get_compressor()
             if compressor is not None:
@@ -294,11 +277,11 @@ class CompressedKVConnector(KVConnectorBase_V1):
                     payload = pack_compressed(compressed)
                     send_names = add_sentinel(layer_names)
                     logger.info(
-                        "[Connector][RID][SEND] sending compressed rid=%s key=%s "
+                        "[Connector][RID][SEND] sending compressed rid=%s transfer_id=%s "
                         "layers=%d payload_shape=%s",
-                        rid, transfer_key, len(layer_names), list(payload.shape),
+                        rid, transfer_id, len(layer_names), list(payload.shape),
                     )
-                    self._transport.send(transfer_key, send_names, payload)
+                    self._transport.send(transfer_id, send_names, payload)
                     elapsed_ms = (time.monotonic() - t0) * 1e3
                     compressor.update_controller(rid, elapsed_ms)
                     logger.debug(
@@ -313,10 +296,10 @@ class CompressedKVConnector(KVConnectorBase_V1):
                     "falling back to raw send", rid)
 
             logger.info(
-                "[Connector][RID][SEND] sending raw rid=%s key=%s layers=%d shape=%s",
-                rid, transfer_key, len(layer_names), list(stacked.shape),
+                "[Connector][RID][SEND] sending raw rid=%s transfer_id=%s layers=%d shape=%s",
+                rid, transfer_id, len(layer_names), list(stacked.shape),
             )
-            self._transport.send(transfer_key, layer_names, stacked)
+            self._transport.send(transfer_id, layer_names, stacked)
             logger.debug("[Connector] Sent raw KV for %s (%d layers)",
                          rid, len(layer_names))
 
@@ -336,6 +319,8 @@ class CompressedKVConnector(KVConnectorBase_V1):
     ) -> tuple[int, bool]:
         if self.is_producer:
             return 0, False
+        # vLLM requires at least one local token to be scheduled for the
+        # request; external KV can cover the prompt prefix before that token.
         num_external = (len(request.prompt_token_ids) - 1
                         - num_computed_tokens)
         if num_external <= 0:
@@ -345,6 +330,8 @@ class CompressedKVConnector(KVConnectorBase_V1):
     def update_state_after_alloc(self, request: "Request",
                                  blocks: "KVCacheBlocks",
                                  num_external_tokens: int) -> None:
+        # Capture transfer_id as early as possible for both producer/consumer.
+        self._resolve_transfer_id(request.request_id, request)
         if not self.is_producer and num_external_tokens > 0:
             self._requests_need_load[request.request_id] = (
                 request, blocks.get_block_ids()[0])
@@ -355,26 +342,83 @@ class CompressedKVConnector(KVConnectorBase_V1):
 
         for new_req in scheduler_output.scheduled_new_reqs:
             if self.is_producer:
+                num_scheduled_tokens = scheduler_output.num_scheduled_tokens[
+                    new_req.req_id
+                ]
+                num_tokens = num_scheduled_tokens + new_req.num_computed_tokens
+                prompt_token_ids = new_req.prompt_token_ids or []
+                # Chunked prefill: defer transfer until full prompt KV exists.
+                if num_tokens < len(prompt_token_ids):
+                    self.chunked_prefill[new_req.req_id] = (
+                        new_req.block_ids[0], prompt_token_ids
+                    )
+                    continue
                 meta.add_request(
                     request_id=new_req.req_id,
-                    token_ids=new_req.prompt_token_ids,
+                    transfer_id=self._resolve_transfer_id(new_req.req_id),
+                    token_ids=prompt_token_ids,
                     block_ids=new_req.block_ids[0],
                     block_size=self._block_size,
                 )
             else:
                 if new_req.req_id in self._requests_need_load:
-                    _, block_ids = self._requests_need_load.pop(new_req.req_id)
                     meta.add_request(
                         request_id=new_req.req_id,
-                        token_ids=new_req.prompt_token_ids,
-                        block_ids=block_ids,
+                        transfer_id=self._resolve_transfer_id(new_req.req_id),
+                        token_ids=new_req.prompt_token_ids or [],
+                        block_ids=new_req.block_ids[0],
                         block_size=self._block_size,
                     )
+                    self._requests_need_load.pop(new_req.req_id)
 
-        # Do NOT clear _requests_need_load here. vLLM may only put part of the
-        # batch in scheduled_new_reqs on a given step; clearing would erase
-        # block_ids for requests not yet included, and update_state_after_alloc
-        # does not run again for them → KV load timeouts when N grows (e.g. 3 vs 13).
+        cached_reqs = scheduler_output.scheduled_cached_reqs
+        for i, req_id in enumerate(cached_reqs.req_ids):
+            num_computed_tokens = cached_reqs.num_computed_tokens[i]
+            new_block_ids = cached_reqs.new_block_ids[i]
+            resumed_from_preemption = req_id in cached_reqs.resumed_req_ids
+
+            if self.is_producer:
+                num_scheduled_tokens = scheduler_output.num_scheduled_tokens[req_id]
+                num_tokens = num_scheduled_tokens + num_computed_tokens
+                assert req_id in self.chunked_prefill
+                assert new_block_ids is not None
+                block_ids = new_block_ids[0]
+                if not resumed_from_preemption:
+                    block_ids = self.chunked_prefill[req_id][0] + block_ids
+                prompt_token_ids = self.chunked_prefill[req_id][1]
+
+                if num_tokens < len(prompt_token_ids):
+                    self.chunked_prefill[req_id] = (block_ids, prompt_token_ids)
+                    continue
+
+                meta.add_request(
+                    request_id=req_id,
+                    transfer_id=self._resolve_transfer_id(req_id),
+                    token_ids=prompt_token_ids,
+                    block_ids=block_ids,
+                    block_size=self._block_size,
+                )
+                self.chunked_prefill.pop(req_id, None)
+                continue
+
+            # Resumed preempted requests are first N in cached_reqs.
+            if not resumed_from_preemption:
+                break
+            if req_id in self._requests_need_load:
+                request, _ = self._requests_need_load.pop(req_id)
+                total_tokens = num_computed_tokens + 1
+                token_ids = request.all_token_ids[:total_tokens]
+                assert new_block_ids is not None
+                block_ids = new_block_ids[0]
+                meta.add_request(
+                    request_id=req_id,
+                    transfer_id=self._resolve_transfer_id(req_id, request),
+                    token_ids=token_ids,
+                    block_ids=block_ids,
+                    block_size=self._block_size,
+                )
+
+        self._requests_need_load.clear()
         return meta
 
     def request_finished(
@@ -382,6 +426,8 @@ class CompressedKVConnector(KVConnectorBase_V1):
         request: "Request",
         block_ids: list[int],
     ) -> tuple[bool, Optional[dict[str, Any]]]:
+        self.chunked_prefill.pop(request.request_id, None)
+        self._request_transfer_ids.pop(request.request_id, None)
         if not self.is_producer:
             self._requests_need_load.pop(request.request_id, None)
         return False, None
@@ -413,6 +459,17 @@ class CompressedKVConnector(KVConnectorBase_V1):
             "[Connector] KVCompressionAdapter built: mode=%s heads=%d head_size=%d",
             mode_desc, self._num_kv_heads, self._head_size)
         return self._compressor
+
+    def _resolve_transfer_id(
+        self, request_id: str, request: "Request | None" = None
+    ) -> str:
+        if request is not None:
+            params = getattr(request, "kv_transfer_params", None)
+            if params is not None:
+                transfer_id = params.get("transfer_id")
+                if transfer_id:
+                    self._request_transfer_ids[request_id] = str(transfer_id)
+        return self._request_transfer_ids.get(request_id, request_id)
 
     @staticmethod
     def _build_transport(cfg, local_rank: int = 0):

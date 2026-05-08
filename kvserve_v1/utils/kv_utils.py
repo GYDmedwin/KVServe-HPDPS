@@ -54,3 +54,66 @@ def inject_kv_into_layer(
     flat = kv_cache_layer.reshape(2, num_pages * page_size, -1)
     sm = slot_mapping.to(flat.device)
     flat[:, sm, :] = kv_data.to(flat.device)
+
+
+def extract_kv_from_layer_by_blocks(
+    kv_layer: torch.Tensor,
+    block_ids: list[int],
+) -> torch.Tensor:
+    """Extract KV blocks for one request using block IDs.
+
+    Mirrors vLLM p2p connector behavior:
+    - FlashAttention layout: [2, num_blocks, ...] -> kv[:, block_ids, ...]
+    - MLA/FlashInfer layout: [num_blocks, 2, ...] -> kv[block_ids, ...]
+    """
+    if not block_ids:
+        # Keep a valid empty tensor with compatible rank.
+        if kv_layer.shape[0] == 2:
+            return kv_layer[:, :0, ...].clone()
+        return kv_layer[:0, ...].clone()
+
+    idx = torch.tensor(block_ids, device=kv_layer.device, dtype=torch.long)
+    if kv_layer.shape[0] == 2:  # FlashAttention
+        return kv_layer[:, idx, ...].clone()
+    if kv_layer.shape[1] == 2:  # MLA/FlashInfer
+        return kv_layer[idx, ...].clone()
+    raise RuntimeError(f"Unsupported KV layout shape: {tuple(kv_layer.shape)}")
+
+
+def inject_kv_into_layer_by_blocks(
+    kv_cache_layer: torch.Tensor,
+    kv_data: torch.Tensor,
+    block_ids: list[int],
+    request_id: str = "",
+) -> None:
+    """Inject KV blocks for one request using block IDs.
+
+    If producer/consumer block counts differ by tail blocks, inject overlap only
+    (same behavior as vLLM p2p connector warnings).
+    """
+    if not block_ids:
+        return
+
+    idx = torch.tensor(block_ids, device=kv_cache_layer.device, dtype=torch.long)
+    payload = kv_data.to(kv_cache_layer.device)
+
+    if kv_cache_layer.shape[0] == 2:  # FlashAttention
+        num_blocks = payload.shape[1]
+        if idx.numel() == num_blocks:
+            kv_cache_layer[:, idx, ...] = payload
+        else:
+            kv_cache_layer[:, idx[:num_blocks], ...] = payload
+        return
+
+    if kv_cache_layer.shape[1] == 2:  # MLA/FlashInfer
+        num_blocks = payload.shape[0]
+        if idx.numel() == num_blocks:
+            kv_cache_layer[idx, ...] = payload
+        else:
+            kv_cache_layer[idx[:num_blocks], ...] = payload
+        return
+
+    raise RuntimeError(
+        f"Unsupported KV layout for request {request_id}: "
+        f"{tuple(kv_cache_layer.shape)}"
+    )
