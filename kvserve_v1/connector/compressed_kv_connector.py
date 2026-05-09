@@ -13,6 +13,7 @@ Key design decisions (learned from conversation log):
   Compressed messages are identified by a "__compressed__" sentinel in layer_names.
 """
 
+import json
 import os
 import time
 from collections import defaultdict, deque
@@ -48,6 +49,30 @@ _LOAD_TIMEOUT_S = 60.0
 
 def _sorted_rids(rids: list[str] | set[str]) -> list[str]:
     return sorted(rids)
+
+
+def _write_compression_stats(
+    request_id: str,
+    transfer_id: str,
+    original_bytes: int,
+    compressed_bytes: int,
+) -> None:
+    stats_path = os.environ.get("KVSERVE_COMPRESSION_STATS_PATH")
+    if not stats_path or original_bytes <= 0 or compressed_bytes <= 0:
+        return
+    row = {
+        "request_id": request_id,
+        "transfer_id": transfer_id,
+        "original_bytes": original_bytes,
+        "compressed_bytes": compressed_bytes,
+    }
+    try:
+        with open(stats_path, "a") as f:
+            f.write(json.dumps(row, sort_keys=True) + "\n")
+    except OSError as e:
+        logger.warning_once(
+            "[Connector] Failed to write compression stats to %s: %s",
+            stats_path, e)
 
 
 @dataclass
@@ -316,6 +341,12 @@ class CompressedKVConnector(KVConnectorBase_V1):
                         rid, transfer_id, len(layer_names), list(payload.shape),
                     )
                     self._transport.send(transfer_id, send_names, payload)
+                    _write_compression_stats(
+                        request_id=rid,
+                        transfer_id=transfer_id,
+                        original_bytes=stacked.numel() * stacked.element_size(),
+                        compressed_bytes=payload.numel() * payload.element_size(),
+                    )
                     elapsed_ms = (time.monotonic() - t0) * 1e3
                     compressor.update_controller(rid, elapsed_ms)
                     logger.debug(

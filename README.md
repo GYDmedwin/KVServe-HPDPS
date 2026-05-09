@@ -7,9 +7,17 @@
 ![Accuracy](https://img.shields.io/badge/accuracy-preserved-15803d)
 ![License](https://img.shields.io/badge/license-Apache--2.0-64748b)
 
-KVServe is a vLLM V1 KV connector extension for disaggregated prefill/decode
-serving with optional KV communication compression. It keeps scheduling and KV
-block management inside vLLM and only handles KV transfer plus compression.
+**Service-aware KV-cache compression for bandwidth-efficient disaggregated LLM serving.**
+
+KVServe is a **vLLM V1 KV connector extension** that reduces KV-cache traffic in disaggregated prefill/decode serving. It plugs into vLLM without forking the runtime, keeps scheduling and KV block management inside vLLM, and only handles KV transfer plus optional compression.
+
+KVServe is built around a modular KV compression abstraction:
+
+```text
+Raw KV Cache  →  Transform  →  Quantizer  →  Codec  →  Compressed KV Payload
+```
+
+This makes KV compression configurable, extensible, and service-aware: KVServe can choose different compression profiles based on bandwidth, SLO, and quality budget, and can bypass compression when it is not beneficial.
 
 ```text
 KV COMPRESSION          █████████  9x
@@ -18,14 +26,31 @@ END-TO-END LATENCY      ███████▌   7.5x lower
 ACCURACY                █████████  preserved
 ```
 
+## Where KVServe Helps
+
+KVServe is most useful when KV transfer is on the critical path.
+
+| Scenario | Bandwidth | Communication Path | KVServe Benefit |
+|---|---:|---|---|
+| Distributed edge system | ≤10 Gbps | Robot → robot over wireless | Highest |
+| Remote KV-cache storage | 5–25 Gbps | Remote storage → HBM over Ethernet | High |
+| Cross datacenter / cluster PD serving | 10–100 Gbps | Prefill cluster → decode cluster over Ethernet | High |
+| Cross node PD serving | 50–200+ Gbps | Prefill node → decode node over RoCE / InfiniBand | Medium |
+
+When bandwidth is tight, KVServe uses stronger compression to reduce transfer time.
+When bandwidth is abundant, KVServe can select lighter compression or disable compression to avoid unnecessary overhead.
+
+## Key Features
+
 - **Plug into vLLM**: use `kv_connector_module_path`, no vLLM fork required.
 - **Compress only KV traffic**: vLLM keeps native scheduling and KV block management.
-- **Support PD + TP**: validated for two-engine PD and homogeneous TP.
+- **Service-aware selection**: choose compression profiles based on bandwidth, SLO, and quality budget.
+- **Modular compression pipeline**: configure Transform / Quantizer / Codec independently.
+- **Support PD + TP**: validated for two-engine PD and homogeneous tensor parallelism.
 
 ## Installation
 
-Use an environment that already has a compatible vLLM installation, then install
-KVServe from the repository root:
+Use an environment that already has a compatible vLLM installation, then install KVServe from the repository root:
 
 ```bash
 cd /path/to/KVServe
@@ -33,7 +58,7 @@ pip install -e .
 pip install -r requirements.txt
 ```
 
-If you do not install editable mode, set `PYTHONPATH` before running tests:
+If you do not install in editable mode, set `PYTHONPATH` before running tests:
 
 ```bash
 cd /path/to/KVServe
@@ -42,8 +67,7 @@ export PYTHONPATH="$(pwd)"
 
 ## External vLLM Connector
 
-KVServe can be used as an out-of-tree vLLM V1 connector. Install this package in
-the same Python environment as vLLM, then configure vLLM with:
+KVServe can be used as an out-of-tree vLLM V1 connector. Install this package in the same Python environment as vLLM, then configure vLLM with:
 
 ```python
 KVTransferConfig(
@@ -58,21 +82,84 @@ KVTransferConfig(
 )
 ```
 
-See `examples/external_connector_config.py` for a copyable producer/consumer
-configuration helper.
+See `examples/external_connector_config.py` for a copyable producer/consumer configuration helper.
 
-For homogeneous TP, use the same tensor parallel size on prefill and decode.
-KVServe opens one rank-to-rank channel per TP rank: `kv_port + tp_rank`.
+For homogeneous TP, use the same tensor parallel size on prefill and decode. KVServe opens one rank-to-rank channel per TP rank:
 
-`transfer_id` is the stable wire key for one logical request. In production it
-should be generated once by the router or request admission layer, then passed
-to both prefill and decode through `SamplingParams.extra_args`. The connector
-cannot safely invent matching IDs independently on two different engines.
+```text
+kv_port + tp_rank
+```
+
+`transfer_id` is the stable wire key for one logical request. In production, it should be generated once by the router or request admission layer, then passed to both prefill and decode through `SamplingParams.extra_args`. The connector cannot safely invent matching IDs independently on two different engines.
+
+## Configure Your Own Compression Components
+
+KVServe compression is configured as an ordered pipeline. The connector still
+receives vLLM-managed KV blocks; the pipeline only transforms the extracted KV
+payload before transport.
+
+### Build a Compression Pipeline
+
+Use `kv_connector_extra_config["compression"]` to pass either `None`,
+`"default"`, or a custom pipeline dict:
+
+```python
+kv_connector_extra_config={
+    "compression": {
+        "enabled": True,
+        "pipeline": ["quantizer", "codec"],
+        "quantizer_config": {
+            "model_name": "Qwen2.5-7B-Instruct",
+            "hybrid_ratio": 0.3,
+            "high_key_max_value": 16,
+            "high_value_max_value": 16,
+            "low_key_max_value": 12,
+            "low_value_max_value": 12,
+            "axis_key": "channel",
+            "axis_value": "token",
+            "split_type": "head",
+        },
+        "codec_config": {
+            "codec_type": "nvcomp",
+            "nvcomp_algorithm": "ANS",
+            "data_type": "|u1",
+        },
+        "min_compress_size": 1024,
+    }
+}
+```
+
+Add a transform stage when needed:
+
+```python
+"compression": {
+    "enabled": True,
+    "pipeline": ["transformer", "quantizer", "codec"],
+    "transformer_config": {"transform_type": "hadamard", "seed": 0x3333},
+    "quantizer_config": {...},
+    "codec_config": {...},
+}
+```
+
+The built-in stages are:
+
+- `transformer`: `KVServeTransformer`, currently Hadamard transform.
+- `quantizer`: `KVServeQuantizer`, hybrid head/layer precision quantization.
+- `codec`: `KVServeCodec`, currently nvCOMP-backed lossless payload coding.
+
+### Add a Compression Component
+
+KVServe allows new transformer, quantizer, or codec implementations without
+touching vLLM scheduling or KV block allocation. Custom components should follow
+the same KV shape contract and be selected inside
+`KVCompressionAdapter._build_manager()`.
+
+See `examples/README.md` for the minimal custom quantizer example and wiring
+snippet.
 
 ## Testing
 
-All commands below should be run from the repository root. Override the model
-path with `--model /path/to/model` when the default path is not available.
+All commands below should be run from the repository root. Override the model path with `--model /path/to/model` when the default path is not available.
 
 Baseline PD separation:
 
@@ -80,41 +167,37 @@ Baseline PD separation:
 python tests/test_pd_prefill_decode.py --model /path/to/model
 ```
 
-Simulator without compression:
+KVServe test without compression:
 
 ```bash
-python tests/test_simulator.py --mode none --model /path/to/model
-python tests/test_simulator.py --mode none --model /path/to/model \
+python tests/test_kvserve.py --mode none --model /path/to/model
+python tests/test_kvserve.py --mode none --model /path/to/model \
   --lmeval-task wikitext --num-requests 20
 ```
 
-Simulator with compression:
+KVServe test with compression:
 
 ```bash
-python tests/test_simulator.py --mode custom --model /path/to/model
-python tests/test_simulator.py --mode default --model /path/to/model
+python tests/test_kvserve.py --mode custom --model /path/to/model
+python tests/test_kvserve.py --mode default --model /path/to/model
 ```
 
-Controller mode requires a profile library:
+Controller mode with a profile library:
 
 ```bash
-python tests/test_simulator.py --mode controller --model /path/to/model \
+python tests/test_kvserve.py --mode controller --model /path/to/model \
   --library-path /path/to/profiles.json
 ```
 
-`--lmeval-task` requires `lm-eval` and a locally available dataset cache unless
-`--online` is passed.
+`--lmeval-task` requires `lm-eval` and a locally available dataset cache unless `--online` is passed.
 
 ## Notes
 
-- KVServe expects the PD orchestration layer to attach a stable `transfer_id`
-  to each logical request. This is handled by the test simulator; external
-  integrations should do the same in their router or request admission layer.
-- The current connector validates the standard two-engine PD path with one
-  producer and one consumer instance. Homogeneous TP is supported when prefill
-  and decode use the same TP size.
+- KVServe expects the PD orchestration layer to attach a stable `transfer_id` to each logical request. This is handled by the KVServe test; external integrations should do the same in their router or request admission layer.
+- The current connector validates the standard two-engine PD path with one producer and one consumer instance.
+- Homogeneous TP is supported when prefill and decode use the same TP size.
 - The ZMQ/NCCL control plane should run on trusted network interfaces only.
 
 ## License
 
-Apache-2.0.
+Apache-2.0

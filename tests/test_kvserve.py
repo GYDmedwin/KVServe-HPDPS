@@ -1,18 +1,17 @@
-"""PD Separation end-to-end test with optional KV compression and lm-eval prompts.
+"""KVServe end-to-end test with optional KV compression and lm-eval prompts.
 
-Mirrors /root/workspaces/KVServe/test/test_simulator.py in scope but uses the
-real vLLM v1 PD separation (CompressedKVConnector + NCCL transport) instead of
-the file-based SimulatorBackend from the original project.
+This runs real vLLM V1 PD separation through CompressedKVConnector and NCCL
+transport.
 
 USAGE
 =====
-  python tests/test_simulator.py                         # no compression, built-in prompts
-  python tests/test_simulator.py --mode custom           # custom compression config
-  python tests/test_simulator.py --mode default          # built-in default config
-  python tests/test_simulator.py --mode controller       # online adaptive (needs --library-path)
+  python tests/test_kvserve.py                           # no compression, built-in prompts
+  python tests/test_kvserve.py --mode custom             # custom compression config
+  python tests/test_kvserve.py --mode default            # built-in default config
+  python tests/test_kvserve.py --mode controller         # online adaptive (needs --library-path)
       --library-path /path/to/profiles.json
       --bandwidth-mbps 1000 --slo-ms 200 --accuracy-req 0.92
-  python tests/test_simulator.py --lmeval-task wikitext --num-requests 20
+  python tests/test_kvserve.py --lmeval-task wikitext --num-requests 20
 
 CONFIGURATION
 =============
@@ -21,6 +20,7 @@ Edit the constants block below to change model, GPU memory, ports, etc.
 
 import argparse
 import csv
+import json
 import multiprocessing as mp
 import os
 import time
@@ -251,7 +251,6 @@ class RequestResult:
     prompt_chars: int
     output_text: str
     output_tokens: int
-    decode_latency_ms: float
     compression_mode: str
 
 
@@ -287,9 +286,11 @@ def make_compression_spec(args) -> object:
 # ---------------------------------------------------------------------------
 
 def run_prefill(model, prefill_gpus, kv_port, gpu_mem_util,
-                compression_spec, prompts):
+                compression_spec, prompts, compression_stats_path):
     prefill_devices = _parse_gpu_list(str(prefill_gpus))
     os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(prefill_devices)
+    if compression_stats_path:
+        os.environ["KVSERVE_COMPRESSION_STATS_PATH"] = compression_stats_path
     tp_size = len(prefill_devices)
 
     from vllm import LLM, SamplingParams
@@ -328,7 +329,8 @@ def run_prefill(model, prefill_gpus, kv_port, gpu_mem_util,
 
 
 def run_decode(model, decode_gpus, kv_port, result_queue, gpu_mem_util,
-               compression_spec, prompts, max_tokens, mode_label):
+               compression_spec, prompts, max_tokens, mode_label,
+               print_outputs):
     decode_devices = _parse_gpu_list(str(decode_gpus))
     os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(decode_devices)
     tp_size = len(decode_devices)
@@ -370,7 +372,6 @@ def run_decode(model, decode_gpus, kv_port, result_queue, gpu_mem_util,
     ]
     outputs = llm.generate(prompts, sampling_params=decode_params)
     total_ms = (time.monotonic() - t_start) * 1e3
-    per_req_ms = total_ms / max(len(prompts), 1)
 
     results = []
     for i, out in enumerate(outputs):
@@ -380,14 +381,14 @@ def run_decode(model, decode_gpus, kv_port, result_queue, gpu_mem_util,
             prompt_chars=len(out.prompt),
             output_text=text,
             output_tokens=len(out.outputs[0].token_ids),
-            decode_latency_ms=per_req_ms,
             compression_mode=mode_label,
         )
         results.append(r)
-        print(f"[Decode] [{i}] {out.prompt[:60]!r}... -> {text!r}", flush=True)
+        if print_outputs:
+            print(f"[Decode] [{i}] {out.prompt[:60]!r}... -> {text!r}", flush=True)
 
     result_queue.put(results)
-    print(f"[Decode] Done. total={total_ms:.0f}ms  avg/req={per_req_ms:.0f}ms", flush=True)
+    print(f"[Decode] Done. total_wall={total_ms:.0f}ms", flush=True)
 
 
 # ---------------------------------------------------------------------------
@@ -396,7 +397,7 @@ def run_decode(model, decode_gpus, kv_port, result_queue, gpu_mem_util,
 
 _CSV_FIELDS = [
     "request_id", "compression_mode", "prompt_chars",
-    "output_tokens", "decode_latency_ms", "output_text",
+    "output_tokens", "output_text",
 ]
 
 
@@ -412,19 +413,48 @@ def save_csv(results: list, path: str) -> None:
     print(f"[Results] Saved {len(results)} rows -> {path}")
 
 
-def print_summary(results: list) -> None:
+def _compression_stats_path(output_dir: str, mode: str) -> str:
+    return os.path.join(output_dir, f"compression_stats_{mode}.jsonl")
+
+
+def load_compression_ratios(path: str | None) -> list[float]:
+    if not path or not os.path.exists(path):
+        return []
+
+    ratios: list[float] = []
+    with open(path, "r") as f:
+        for line in f:
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            original = float(row.get("original_bytes", 0))
+            compressed = float(row.get("compressed_bytes", 0))
+            if original > 0 and compressed > 0:
+                ratios.append(original / compressed)
+    return ratios
+
+
+def print_summary(
+    results: list,
+    compression_ratios: list[float] | None = None,
+    compression_enabled: bool = False,
+) -> None:
     n = len(results)
     if n == 0:
         return
-    avg_lat = sum(r.decode_latency_ms for r in results) / n
     avg_tok = sum(r.output_tokens for r in results) / n
-    empty = sum(1 for r in results if not r.output_text.strip())
+    success = n
     print(f"\n{'='*60}")
     print(f"SUMMARY  (n={n}, mode={results[0].compression_mode})")
     print(f"{'='*60}")
-    print(f"  Avg decode latency/req : {avg_lat:.1f} ms")
     print(f"  Avg output tokens/req  : {avg_tok:.1f}")
-    print(f"  Empty outputs          : {empty}/{n}")
+    print(f"  Successful requests    : {success}/{n}")
+    if compression_enabled and compression_ratios:
+        avg_ratio = sum(compression_ratios) / len(compression_ratios)
+        print(f"  Avg compression ratio  : {avg_ratio:.2f}x")
+    elif compression_enabled:
+        print("  Avg compression ratio  : N/A")
     print(f"{'='*60}\n")
 
 
@@ -467,6 +497,8 @@ def main():
                         choices=["none", "default", "custom", "controller"],
                         default="none",
                         help="Compression mode")
+    parser.add_argument("--print-outputs", action="store_true", default=False,
+                        help="Print per-request decoded text. Disabled by default.")
 
     # Controller-only options
     parser.add_argument("--library-path", default=None,
@@ -522,6 +554,13 @@ def main():
     print(f"  KV port(s)   : {kv_ports}")
     print(f"{'='*60}\n")
 
+    compression_stats_path = None
+    if compression_spec is not None:
+        os.makedirs(args.output_dir, exist_ok=True)
+        compression_stats_path = _compression_stats_path(args.output_dir, args.mode)
+        if os.path.exists(compression_stats_path):
+            os.remove(compression_stats_path)
+
     mp.set_start_method("spawn", force=True)
     manager = mp.Manager()
     result_queue = manager.Queue()
@@ -529,13 +568,13 @@ def main():
     p_prefill = mp.Process(
         target=run_prefill,
         args=(args.model, prefill_gpus, args.kv_port, args.gpu_mem_util,
-              compression_spec, prompts),
+              compression_spec, prompts, compression_stats_path),
     )
     p_decode = mp.Process(
         target=run_decode,
         args=(args.model, decode_gpus, args.kv_port, result_queue,
               args.gpu_mem_util, compression_spec, prompts, args.max_tokens,
-              args.mode),
+              args.mode, args.print_outputs),
     )
 
     # Start decode first so the consumer transport is ready to receive as
@@ -563,7 +602,11 @@ def main():
         print("FAIL: no results received")
         os._exit(1)
 
-    print_summary(results)
+    print_summary(
+        results,
+        load_compression_ratios(compression_stats_path),
+        compression_enabled=compression_spec is not None,
+    )
 
     csv_name = f"results_{args.mode}_{args.lmeval_task or 'builtin'}.csv"
     save_csv(results, os.path.join(args.output_dir, csv_name))
