@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     from vllm.attention.backends.abstract import AttentionMetadata
     from vllm.config import VllmConfig
     from vllm.forward_context import ForwardContext
+    from vllm.v1.kv_cache_interface import KVCacheConfig
     from vllm.v1.core.kv_cache_manager import KVCacheBlocks
     from vllm.v1.request import Request
 
@@ -80,8 +81,13 @@ class CompressedKVConnector(KVConnectorBase_V1):
     Compression: configurable via kv_connector_extra_config["compression"].
     """
 
-    def __init__(self, vllm_config: "VllmConfig", role: KVConnectorRole):
-        super().__init__(vllm_config, role)
+    def __init__(
+        self,
+        vllm_config: "VllmConfig",
+        role: KVConnectorRole,
+        kv_cache_config: "KVCacheConfig | None" = None,
+    ):
+        super().__init__(vllm_config, role, kv_cache_config)
 
         cfg = vllm_config.kv_transfer_config
         self.is_producer = cfg.is_kv_producer
@@ -112,6 +118,8 @@ class CompressedKVConnector(KVConnectorBase_V1):
         # the quantizer's model_name when "default" compression mode is selected.
         self._model_name: str = os.path.basename(
             vllm_config.model_config.model.rstrip("/"))
+        self._tp_rank: int = 0
+        self._tp_size: int = 1
 
         # Compression spec: None | "default" | custom-dict | controller-dict
         # Built lazily on first use to avoid import overhead at init time.
@@ -119,14 +127,40 @@ class CompressedKVConnector(KVConnectorBase_V1):
         self._compression_cfg = cfg.kv_connector_extra_config.get("compression")
 
         if role == KVConnectorRole.WORKER:
-            from vllm.distributed.parallel_state import get_world_group
+            from vllm.distributed.parallel_state import (
+                get_tensor_model_parallel_rank,
+                get_tensor_model_parallel_world_size,
+                get_world_group,
+            )
             local_rank = get_world_group().local_rank
-            self._transport = self._build_transport(cfg, local_rank)
+            tp_rank = get_tensor_model_parallel_rank()
+            tp_size = get_tensor_model_parallel_world_size()
+            self._tp_rank = tp_rank
+            self._tp_size = tp_size
+            self._transport = self._build_transport(
+                cfg, local_rank=local_rank, channel_rank=tp_rank)
             logger.info(
                 "[CompressedKVConnector] WORKER init: is_producer=%s "
-                "local_rank=%d compression=%s",
-                self.is_producer, local_rank,
+                "local_rank=%d tp_rank=%d tp_size=%d compression=%s",
+                self.is_producer, local_rank, tp_rank, tp_size,
                 "enabled" if self._compression_cfg else "disabled")
+
+    @classmethod
+    def get_required_kvcache_layout(cls, vllm_config: "VllmConfig") -> str | None:
+        if vllm_config.model_config is None:
+            logger.warning_once(
+                "Unable to detect current VLLM config. "
+                "Fallback to default KV cache layout.")
+            return None
+        if vllm_config.model_config.use_mla:
+            logger.warning_once(
+                "CompressedKVConnector has not validated MLA KV cache layout; "
+                "falling back to vLLM default layout.")
+            return None
+        logger.info_once(
+            "CompressedKVConnector setting KV cache layout to NHD "
+            "for the validated compressed KV transfer path.")
+        return "NHD"
 
     # ── Worker-side ────────────────────────────────────────────────────────
 
@@ -418,7 +452,6 @@ class CompressedKVConnector(KVConnectorBase_V1):
                     block_size=self._block_size,
                 )
 
-        self._requests_need_load.clear()
         return meta
 
     def request_finished(
@@ -447,6 +480,8 @@ class CompressedKVConnector(KVConnectorBase_V1):
             num_kv_heads=self._num_kv_heads,
             head_size=self._head_size,
             model_name=self._model_name,
+            tp_rank=self._tp_rank,
+            tp_size=self._tp_size,
         )
         spec = self._compression_cfg
         if spec == "default":
@@ -465,18 +500,23 @@ class CompressedKVConnector(KVConnectorBase_V1):
     ) -> str:
         if request is not None:
             params = getattr(request, "kv_transfer_params", None)
-            if params is not None:
-                transfer_id = params.get("transfer_id")
-                if transfer_id:
-                    self._request_transfer_ids[request_id] = str(transfer_id)
+            if params and params.get("transfer_id"):
+                self._request_transfer_ids[request_id] = str(
+                    params["transfer_id"])
+            else:
+                logger.warning_once(
+                    "Missing transfer_id in kv_transfer_params from router; "
+                    "falling back to local request_id. This is only safe for "
+                    "single-process tests and should not be used in PD serving.")
         return self._request_transfer_ids.get(request_id, request_id)
 
     @staticmethod
-    def _build_transport(cfg, local_rank: int = 0):
+    def _build_transport(cfg, local_rank: int = 0, channel_rank: int = 0):
         from kvserve_v1.transport.nccl_transport import NcclTransport
         return NcclTransport(
             is_sender=cfg.is_kv_producer,
             host=cfg.kv_ip,
             port=cfg.kv_port,
             local_rank=local_rank,
+            channel_rank=channel_rank,
         )

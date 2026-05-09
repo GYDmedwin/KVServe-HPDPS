@@ -197,6 +197,13 @@ def build_prompts(lmeval_task: Optional[str], num_requests: int,
     return prompts
 
 
+def _parse_gpu_list(gpus: str) -> list[str]:
+    devices = [gpu.strip() for gpu in gpus.split(",") if gpu.strip()]
+    if not devices:
+        raise ValueError(f"Invalid GPU list: {gpus!r}")
+    return devices
+
+
 def _truncate_prompts_by_tokens(prompts: list[str], max_prompt_tokens: int) -> list[str]:
     """Bound prompt token length to avoid very slow rendering/tokenization."""
     if not prompts or max_prompt_tokens <= 0:
@@ -279,9 +286,11 @@ def make_compression_spec(args) -> object:
 # Worker processes
 # ---------------------------------------------------------------------------
 
-def run_prefill(model, prefill_gpu, kv_port, gpu_mem_util,
+def run_prefill(model, prefill_gpus, kv_port, gpu_mem_util,
                 compression_spec, prompts):
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(prefill_gpu)
+    prefill_devices = _parse_gpu_list(str(prefill_gpus))
+    os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(prefill_devices)
+    tp_size = len(prefill_devices)
 
     from vllm import LLM, SamplingParams
     from vllm.config import KVTransferConfig
@@ -301,6 +310,7 @@ def run_prefill(model, prefill_gpu, kv_port, gpu_mem_util,
         kv_transfer_config=kv_cfg,
         gpu_memory_utilization=gpu_mem_util,
         max_model_len=MAX_MODEL_LEN,
+        tensor_parallel_size=tp_size,
         enable_prefix_caching=False,
         enforce_eager=True,
         enable_chunked_prefill=False,
@@ -317,9 +327,11 @@ def run_prefill(model, prefill_gpu, kv_port, gpu_mem_util,
     print("[Prefill] Done - KV sent.", flush=True)
 
 
-def run_decode(model, decode_gpu, kv_port, result_queue, gpu_mem_util,
+def run_decode(model, decode_gpus, kv_port, result_queue, gpu_mem_util,
                compression_spec, prompts, max_tokens, mode_label):
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(decode_gpu)
+    decode_devices = _parse_gpu_list(str(decode_gpus))
+    os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(decode_devices)
+    tp_size = len(decode_devices)
 
     from vllm import LLM, SamplingParams
     from vllm.config import KVTransferConfig
@@ -339,6 +351,7 @@ def run_decode(model, decode_gpu, kv_port, result_queue, gpu_mem_util,
         kv_transfer_config=kv_cfg,
         gpu_memory_utilization=gpu_mem_util,
         max_model_len=MAX_MODEL_LEN,
+        tensor_parallel_size=tp_size,
         enable_prefix_caching=False,
         enforce_eager=True,
         enable_chunked_prefill=False,
@@ -440,6 +453,12 @@ def main():
     parser.add_argument("--model", default=MODEL_PATH)
     parser.add_argument("--prefill-gpu", type=int, default=0)
     parser.add_argument("--decode-gpu", type=int, default=1)
+    parser.add_argument("--prefill-gpus", default=None,
+                        help="Comma-separated GPU list for prefill. "
+                             "Overrides --prefill-gpu and enables TP by list length.")
+    parser.add_argument("--decode-gpus", default=None,
+                        help="Comma-separated GPU list for decode. "
+                             "Overrides --decode-gpu and enables TP by list length.")
     parser.add_argument("--kv-port", type=int, default=DEFAULT_KV_PORT)
     parser.add_argument("--gpu-mem-util", type=float, default=GPU_MEMORY_UTILIZATION)
 
@@ -470,6 +489,15 @@ def main():
 
     args = parser.parse_args()
 
+    prefill_gpus = args.prefill_gpus or str(args.prefill_gpu)
+    decode_gpus = args.decode_gpus or str(args.decode_gpu)
+    prefill_tp = len(_parse_gpu_list(prefill_gpus))
+    decode_tp = len(_parse_gpu_list(decode_gpus))
+    if prefill_tp != decode_tp:
+        raise ValueError(
+            "CompressedKVConnector currently supports homogeneous TP only: "
+            f"prefill_tp={prefill_tp}, decode_tp={decode_tp}")
+
     compression_spec = make_compression_spec(args)
     prompts = build_prompts(
         args.lmeval_task,
@@ -485,9 +513,13 @@ def main():
     src = ("lm-eval:" + args.lmeval_task) if args.lmeval_task else "built-in"
     print(f"  Prompts      : {len(prompts)} ({src})")
     print(f"  Compression  : {args.mode}")
-    print(f"  Prefill GPU  : {args.prefill_gpu}")
-    print(f"  Decode GPU   : {args.decode_gpu}")
-    print(f"  KV port      : {args.kv_port}")
+    print(f"  Prefill GPUs : {prefill_gpus} (TP={prefill_tp})")
+    print(f"  Decode GPUs  : {decode_gpus} (TP={decode_tp})")
+    kv_ports = (
+        str(args.kv_port) if prefill_tp == 1
+        else f"{args.kv_port}-{args.kv_port + prefill_tp - 1}"
+    )
+    print(f"  KV port(s)   : {kv_ports}")
     print(f"{'='*60}\n")
 
     mp.set_start_method("spawn", force=True)
@@ -496,12 +528,12 @@ def main():
 
     p_prefill = mp.Process(
         target=run_prefill,
-        args=(args.model, args.prefill_gpu, args.kv_port, args.gpu_mem_util,
+        args=(args.model, prefill_gpus, args.kv_port, args.gpu_mem_util,
               compression_spec, prompts),
     )
     p_decode = mp.Process(
         target=run_decode,
-        args=(args.model, args.decode_gpu, args.kv_port, result_queue,
+        args=(args.model, decode_gpus, args.kv_port, result_queue,
               args.gpu_mem_util, compression_spec, prompts, args.max_tokens,
               args.mode),
     )

@@ -1,11 +1,11 @@
 """KVCompressionAdapter — wraps kvserve CompressionManager for use in kvserve_v1.
 
 Shape contract:
-  Our format:  [num_layers, 2, num_tokens, kv_dim]
-               where kv_dim = num_kv_heads * head_size
-  Original CM: [num_layers, 2, num_blocks, block_size, num_kv_heads, head_size]
-  Adapter:     treats all tokens as a single super-block, i.e.
-               [num_layers, 2, 1, num_tokens, num_kv_heads, head_size]
+  Connector block format: [num_layers, 2, num_blocks, block_size,
+                           num_kv_heads, head_size]
+  Legacy flat format:     [num_layers, 2, num_tokens, kv_dim]
+  Original CM format:     [num_layers, 2, num_blocks, block_size,
+                           num_kv_heads, head_size]
 
 Three compression modes (set via kv_connector_extra_config["compression"]):
   "default"   – use built-in DEFAULT_COMPRESSION_CONFIG from kvserve
@@ -142,10 +142,13 @@ class KVCompressionAdapter:
     """
 
     def __init__(self, compression_spec: Any, num_kv_heads: int, head_size: int,
-                 model_name: Optional[str] = None):
+                 model_name: Optional[str] = None, tp_rank: int = 0,
+                 tp_size: int = 1):
         self._num_kv_heads = num_kv_heads
         self._head_size = head_size
         self._model_name = model_name  # used to patch model_name in "default" mode
+        self._tp_rank = tp_rank
+        self._tp_size = tp_size
 
         # controller-mode state
         self._controller: Optional[Any] = None
@@ -200,11 +203,16 @@ class KVCompressionAdapter:
 
     def _make_config(self, cfg_dict: dict) -> "CompressionConfig":
         from kvserve_v1.compression.compression_manager import CompressionConfig
+        quantizer_config = cfg_dict.get("quantizer_config")
+        if quantizer_config is not None:
+            quantizer_config = dict(quantizer_config)
+            quantizer_config["tp_rank"] = self._tp_rank
+            quantizer_config["tensor_parallel_size"] = self._tp_size
         return CompressionConfig(
             enabled=cfg_dict.get("enabled", True),
             pipeline=cfg_dict.get("pipeline", []),
             transformer_config=cfg_dict.get("transformer_config"),
-            quantizer_config=cfg_dict.get("quantizer_config"),
+            quantizer_config=quantizer_config,
             codec_config=cfg_dict.get("codec_config"),
             min_compress_size=cfg_dict.get("min_compress_size", 0),
         )
@@ -235,18 +243,31 @@ class KVCompressionAdapter:
         """Return (manager, config) for the given config dict, building and caching if needed."""
         key = _cfg_cache_key(cfg_dict)
         if key not in self._manager_cache:
-            self._manager_cache[key] = (self._build_manager(cfg_dict), self._make_config(cfg_dict))
+            manager = self._build_manager(cfg_dict)
+            self._manager_cache[key] = (manager, self._make_config(cfg_dict))
         return self._manager_cache[key]
 
     # ── Public API ──────────────────────────────────────────────────────────
 
     def compress(self, stacked_kv: torch.Tensor,
                  request_id: str) -> Optional["CompressedKVData"]:
-        """Compress [num_layers, 2, num_tokens, kv_dim] tensor."""
-        num_layers, _, num_tokens, _ = stacked_kv.shape
-        stacked_6d = stacked_kv.contiguous().view(
-            num_layers, 2, 1, num_tokens, self._num_kv_heads, self._head_size)
-        meta = {"original_dtype": str(stacked_kv.dtype).replace("torch.", "")}
+        """Compress connector KV tensor, preserving its original shape."""
+        meta = {
+            "original_dtype": str(stacked_kv.dtype).replace("torch.", ""),
+            "original_shape": list(stacked_kv.shape),
+        }
+
+        if stacked_kv.ndim == 6:
+            stacked_6d = stacked_kv.contiguous()
+        elif stacked_kv.ndim == 4:
+            num_layers, _, num_tokens, _ = stacked_kv.shape
+            stacked_6d = stacked_kv.contiguous().view(
+                num_layers, 2, 1, num_tokens,
+                self._num_kv_heads, self._head_size)
+        else:
+            raise ValueError(
+                f"Unsupported KV tensor rank for compression: {stacked_kv.ndim}, "
+                f"shape={tuple(stacked_kv.shape)}")
 
         if self._controller is not None:
             return self._compress_controller(stacked_6d, request_id, meta)
@@ -259,7 +280,7 @@ class KVCompressionAdapter:
         )
 
     def decompress(self, compressed: "CompressedKVData") -> Optional[torch.Tensor]:
-        """Decompress back to [num_layers, 2, num_tokens, kv_dim]."""
+        """Decompress back to the connector KV tensor shape."""
         if self._controller is not None:
             cfg_dict = compressed.metadata.get("ctrl_profile_cfg")
             if cfg_dict is None:
@@ -275,6 +296,10 @@ class KVCompressionAdapter:
             return None
         if isinstance(result, list):
             result = torch.cat(result, dim=0)
+        original_shape = compressed.metadata.get("original_shape")
+        if original_shape is not None:
+            return result.contiguous().view(*[int(x) for x in original_shape])
+
         num_layers = result.shape[0]
         kv_dim = self._num_kv_heads * self._head_size
         return result.contiguous().view(num_layers, 2, -1, kv_dim)

@@ -1,8 +1,8 @@
 """NCCL data transport with ZMQ control signaling.
 
 Architecture (mirrors P2pNcclEngine's PUT_ASYNC approach):
-  Consumer (receiver): ZMQ ROUTER binds on kv_port
-  Producer (sender):   ZMQ DEALER connects to kv_port
+  Consumer (receiver): ZMQ ROUTER binds on kv_port + tp_rank
+  Producer (sender):   ZMQ DEALER connects to kv_port + tp_rank
 
 Protocol:
   Init (startup):
@@ -50,9 +50,11 @@ class NcclTransport:
     """
 
     def __init__(self, is_sender: bool, host: str, port: int,
-                 local_rank: int = 0):
+                 local_rank: int = 0, channel_rank: int = 0):
         self.is_sender = is_sender
         self.local_rank = local_rank
+        self.channel_rank = channel_rank
+        self.port = port + channel_rank
         self.device = torch.device(f"cuda:{local_rank}")
         self.nccl = NCCLLibrary()
 
@@ -60,10 +62,12 @@ class NcclTransport:
 
         if is_sender:
             self._sock = self._ctx.socket(zmq.DEALER)
-            self._sock.setsockopt_string(zmq.IDENTITY, f"{host}:{port}")
-            self._sock.connect(f"tcp://{host}:{port}")
-            logger.info("[NcclTransport] Producer DEALER connected to %s:%d",
-                        host, port)
+            self._sock.setsockopt_string(zmq.IDENTITY, f"{host}:{self.port}")
+            self._sock.connect(f"tcp://{host}:{self.port}")
+            logger.info(
+                "[NcclTransport] Producer DEALER connected to %s:%d "
+                "(local_rank=%d channel_rank=%d)",
+                host, self.port, local_rank, channel_rank)
 
             # Get unique_id, send to consumer, then both call ncclCommInitRank
             unique_id = self.nccl.ncclGetUniqueId()
@@ -86,9 +90,11 @@ class NcclTransport:
 
         else:
             self._sock = self._ctx.socket(zmq.ROUTER)
-            self._sock.bind(f"tcp://*:{port}")
-            logger.info("[NcclTransport] Consumer ROUTER bound on port %d",
-                        port)
+            self._sock.bind(f"tcp://*:{self.port}")
+            logger.info(
+                "[NcclTransport] Consumer ROUTER bound on port %d "
+                "(local_rank=%d channel_rank=%d)",
+                self.port, local_rank, channel_rank)
 
             self._lock = threading.Lock()
             # ZMQ "request_id" is the connector wire key (transfer_key from connector).

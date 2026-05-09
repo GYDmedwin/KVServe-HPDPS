@@ -1,85 +1,120 @@
 # KVServe
 
-We present *KVServe*, the first service-aware and adaptive KV communication compression framework for disaggregated LLM serving: KVServe (1) unifies KV compression into a modular strategy space with new components and cross-method recomposition; (2) introduces Bayesian Profiling Engine that efficiently searches this space and distills a 3D Pareto candidate set, reducing `50x` offline search overhead; and (3) deploys a Service-Aware Online Controller that combines an analytical latency model with a lightweight bandit to select profiles under constraints and correct offline-to-online mismatch.
+[![vLLM V1](https://img.shields.io/badge/vLLM-V1-4b5563)](https://github.com/vllm-project/vllm)
+![KV compression](https://img.shields.io/badge/KV%20compression-9x-2563eb)
+![PD communication](https://img.shields.io/badge/PD%20comm-8x%20faster-16a34a)
+![Latency](https://img.shields.io/badge/E2E%20latency-7.5x%20lower-9333ea)
+![Accuracy](https://img.shields.io/badge/accuracy-preserved-15803d)
+![License](https://img.shields.io/badge/license-Apache--2.0-64748b)
 
-KVServe works as an upper-layer extension on top of vLLM. It is plug-and-play (`kv_connector_module_path` based), and can be adapted to new vLLM versions with minimal integration changes.
+KVServe is a vLLM V1 KV connector extension for disaggregated prefill/decode
+serving with optional KV communication compression. It keeps scheduling and KV
+block management inside vLLM and only handles KV transfer plus compression.
+
+```text
+KV COMPRESSION          █████████  9x
+PD COMM TIME            ████████   8x lower
+END-TO-END LATENCY      ███████▌   7.5x lower
+ACCURACY                █████████  preserved
+```
+
+- **Plug into vLLM**: use `kv_connector_module_path`, no vLLM fork required.
+- **Compress only KV traffic**: vLLM keeps native scheduling and KV block management.
+- **Support PD + TP**: validated for two-engine PD and homogeneous TP.
 
 ## Installation
 
-From the repository root:
+Use an environment that already has a compatible vLLM installation, then install
+KVServe from the repository root:
 
 ```bash
-cd /data/lzd/kvserve_v1
+cd /path/to/KVServe
+pip install -e .
 pip install -r requirements.txt
 ```
 
-Use any Python environment that matches your vLLM / CUDA stack. This repository does not prescribe how you create that environment.
-
-## Run Guide
-
-From the repository root:
-
-```bash
-cd /data/lzd/kvserve_v1
-```
-
-These scripts live under `tests/`. When you run `python tests/...py`, Python puts `tests/` first on `sys.path`, so the top-level package `kvserve_v1` is **not** on the import path unless you add the repo root. You do **not** need `pip install -e .`; set `PYTHONPATH` to the repo root (`.` is enough **only after** `cd` to that root):
-
-```bash
-export PYTHONPATH=/path/to/KVServe   # absolute path is the most reliable
-# or, equivalently, after cd to repo root:
-export PYTHONPATH="$(pwd)"
-```
-
-The repo root is the directory that contains **both** `kvserve_v1/` (the Python package) and `tests/`. If you run from any other directory, `PYTHONPATH=.` points at the wrong place and vLLM worker processes will fail with `ModuleNotFoundError: No module named 'kvserve_v1'` when loading the connector.
-
-**Do not** rely on `python ../tests/...` unless you have verified that `PYTHONPATH` still points at the repo root (not `tests/`, not `kvserve_v1/kvserve_v1`, not a random build folder).
-
-### 1) Validate PD separation (baseline)
+If you do not install editable mode, set `PYTHONPATH` before running tests:
 
 ```bash
 cd /path/to/KVServe
 export PYTHONPATH="$(pwd)"
-python tests/test_pd_prefill_decode.py
 ```
 
-Override the default model path if needed, for example:
+## External vLLM Connector
+
+KVServe can be used as an out-of-tree vLLM V1 connector. Install this package in
+the same Python environment as vLLM, then configure vLLM with:
+
+```python
+KVTransferConfig(
+    kv_connector="CompressedKVConnector",
+    kv_connector_module_path="kvserve_v1.connector.compressed_kv_connector",
+    kv_role="kv_producer",  # or "kv_consumer"
+    kv_rank=0,              # 0 for producer, 1 for consumer
+    kv_parallel_size=2,
+    kv_ip="decode-node-ip",
+    kv_port=25010,
+    kv_connector_extra_config={"compression": None},
+)
+```
+
+See `examples/external_connector_config.py` for a copyable producer/consumer
+configuration helper.
+
+For homogeneous TP, use the same tensor parallel size on prefill and decode.
+KVServe opens one rank-to-rank channel per TP rank: `kv_port + tp_rank`.
+
+`transfer_id` is the stable wire key for one logical request. In production it
+should be generated once by the router or request admission layer, then passed
+to both prefill and decode through `SamplingParams.extra_args`. The connector
+cannot safely invent matching IDs independently on two different engines.
+
+## Testing
+
+All commands below should be run from the repository root. Override the model
+path with `--model /path/to/model` when the default path is not available.
+
+Baseline PD separation:
 
 ```bash
-cd /path/to/KVServe && export PYTHONPATH="$(pwd)"
-python tests/test_pd_prefill_decode.py --model /path/to/your/model
+python tests/test_pd_prefill_decode.py --model /path/to/model
 ```
 
-### 2) Validate PD + compression
+Simulator without compression:
 
 ```bash
-cd /path/to/KVServe && export PYTHONPATH="$(pwd)"
-python tests/test_pd_with_compression.py --mode custom
-python tests/test_pd_with_compression.py --mode default
-python tests/test_pd_with_compression.py --mode controller --library-path /path/to/profiles.json
+python tests/test_simulator.py --mode none --model /path/to/model
+python tests/test_simulator.py --mode none --model /path/to/model \
+  --lmeval-task wikitext --num-requests 20
 ```
 
-### 3) Run dataset-enabled simulation test
+Simulator with compression:
 
 ```bash
-cd /path/to/KVServe && export PYTHONPATH="$(pwd)"
-python tests/test_simulator.py --mode none
-python tests/test_simulator.py --mode custom
-python tests/test_simulator.py --lmeval-task wikitext --num-requests 20
+python tests/test_simulator.py --mode custom --model /path/to/model
+python tests/test_simulator.py --mode default --model /path/to/model
 ```
 
-`--lmeval-task` requires `lm-eval` to be installed (see `requirements.txt` optional line).
+Controller mode requires a profile library:
 
-## Difference Between the Three Test Files
+```bash
+python tests/test_simulator.py --mode controller --model /path/to/model \
+  --library-path /path/to/profiles.json
+```
 
-- `tests/test_pd_prefill_decode.py`
-  - Verifies PD separation end-to-end (prefill/producer + decode/consumer).
-  - Focuses on communication and functional correctness.
+`--lmeval-task` requires `lm-eval` and a locally available dataset cache unless
+`--online` is passed.
 
-- `tests/test_pd_with_compression.py`
-  - Verifies PD separation with KV compression enabled.
-  - Focuses on compression mode behavior (`custom/default/controller`).
+## Notes
 
-- `tests/test_simulator.py`
-  - Adds dataset-driven testing and richer experiment controls.
-  - Supports lm-eval prompts, CSV export, and optional KV dump mode.
+- KVServe expects the PD orchestration layer to attach a stable `transfer_id`
+  to each logical request. This is handled by the test simulator; external
+  integrations should do the same in their router or request admission layer.
+- The current connector validates the standard two-engine PD path with one
+  producer and one consumer instance. Homogeneous TP is supported when prefill
+  and decode use the same TP size.
+- The ZMQ/NCCL control plane should run on trusted network interfaces only.
+
+## License
+
+Apache-2.0.

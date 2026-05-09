@@ -6,3 +6,9 @@ build/
 dist/
 
 sim_outputs/
+
+.cursor/
+kvserve_v1/transport/file_transport.py
+
+/*.md
+!/README.md
