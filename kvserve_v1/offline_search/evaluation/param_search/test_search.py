@@ -49,7 +49,7 @@ BATCH_SIZE = 2
 CACHE_CSV_PATH = "search_space.csv"
 FINAL_JSON_PATH = f"tolerance_{ACC_TOLERANCE}_results.json"
 BASE_MODEL_PATH = "/root/data/models"
-BASE_CONFIG_PATH = "/root/workspaces/KVServe_opensourced/kvserve_v1/offline_search/duo_config"
+BASE_CONFIG_PATH = "../../duo_config"
 
 # ================= Utilities =================
 
