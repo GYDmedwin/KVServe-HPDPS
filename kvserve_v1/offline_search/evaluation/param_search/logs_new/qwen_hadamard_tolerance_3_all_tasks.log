@@ -1,0 +1,423 @@
+[INFO] === Phase 1: Generating & Profiling Search Space ===
+[INFO] Found cache: Qwen2.5-7B-Instruct/hadamard_search_space_new.csv. Loading cached CR values.
+[INFO] 3969 configs found in cache. 0 new configs to evaluate.
+[INFO] === Initializing Accuracy Evaluator ===
+[INFO] Processing One-Hot Encodings for GP Model...
+[INFO] Features for GP Model: ['heads_selection', 'high_key_max_value', 'high_value_max_value', 'low_key_max_value', 'low_value_max_value', 'transform_type_0', 'axis_key_0', 'axis_value_0']
+[INFO] === Phase 2: Bayesian Optimization Search ===
+[INFO] Target Accuracy: >= 97.0000
+[INFO] --- Cold Start ---
+[INFO] Testing Initial Config (ID:3968): CR=21.5075 -> Acc=20.7200
+[INFO] Testing Initial Config (ID:857): CR=7.9432 -> Acc=85.7900
+[INFO] Testing Initial Config (ID:0): CR=4.9742 -> Acc=100.9900
+[INFO] --- BO Iteration 1/120 | Remaining: 3966/3969 ---
+[INFO] Proposing Config (ID:3926): CR=21.1131 | Pred Acc=69.1667
+[INFO]    TT=hadamard, HS=0.9, MV=6 5 3 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=19.6900 < 97.0000)
+[INFO] --- BO Iteration 2/120 | Remaining: 3965/3969 ---
+[INFO] Proposing Config (ID:3540): CR=9.7560 | Pred Acc=68.5040
+[INFO]    TT=hadamard, HS=0.9, MV=16 16 3 8, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=24.8800 < 97.0000)
+[INFO] --- BO Iteration 3/120 | Remaining: 3964/3969 ---
+[INFO] Proposing Config (ID:300): CR=7.0687 | Pred Acc=82.3489
+[INFO]    TT=hadamard, HS=0.1, MV=8 8 8 8, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=98.3300 > 97.0000
+[INFO] 🎉 NEW BEST! Max CR: 7.0687
+[INFO] --- BO Iteration 4/120 | Remaining: 3963/3969 ---
+[INFO] Proposing Config (ID:255): CR=6.0033 | Pred Acc=84.3224
+[INFO]    TT=hadamard, HS=0.1, MV=8 16 8 3, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=99.2700 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] --- BO Iteration 5/120 | Remaining: 3962/3969 ---
+[INFO] Proposing Config (ID:77): CR=6.8601 | Pred Acc=79.7391
+[INFO]    TT=hadamard, HS=0.1, MV=16 5 8 3, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=98.8900 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] --- BO Iteration 6/120 | Remaining: 3961/3969 ---
+[INFO] Proposing Config (ID:329): CR=8.6123 | Pred Acc=93.9773
+[INFO]    TT=hadamard, HS=0.1, MV=8 5 8 3, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=98.1400 > 97.0000
+[INFO] 🎉 NEW BEST! Max CR: 8.6123
+[INFO] --- BO Iteration 7/120 | Remaining: 3960/3969 ---
+[INFO] Proposing Config (ID:15): CR=5.2268 | Pred Acc=73.7600
+[INFO]    TT=hadamard, HS=0.1, MV=16 16 3 3, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=99.1400 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] --- BO Iteration 8/120 | Remaining: 3959/3969 ---
+[INFO] Proposing Config (ID:3531): CR=9.7234 | Pred Acc=62.7492
+[INFO]    TT=hadamard, HS=0.9, MV=16 16 8 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=92.7400 < 97.0000)
+[INFO] --- BO Iteration 9/120 | Remaining: 3958/3969 ---
+[INFO] Proposing Config (ID:3): CR=5.0961 | Pred Acc=108.7081
+[INFO]    TT=hadamard, HS=0.1, MV=16 16 8 3, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=100.4800 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] --- BO Iteration 10/120 | Remaining: 3957/3969 ---
+[INFO] Proposing Config (ID:336): CR=6.3235 | Pred Acc=94.1071
+[INFO]    TT=hadamard, HS=0.1, MV=6 16 6 8, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=96.8700 < 97.0000)
+[INFO] --- BO Iteration 11/120 | Remaining: 3956/3969 ---
+[INFO] Proposing Config (ID:406): CR=7.0463 | Pred Acc=89.1614
+[INFO]    TT=hadamard, HS=0.1, MV=5 16 3 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=88.1000 < 97.0000)
+[INFO] --- BO Iteration 12/120 | Remaining: 3955/3969 ---
+[INFO] Proposing Config (ID:269): CR=6.3413 | Pred Acc=103.1757
+[INFO]    TT=hadamard, HS=0.1, MV=8 12 8 6, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=100.4000 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] --- BO Iteration 13/120 | Remaining: 3954/3969 ---
+[INFO] Proposing Config (ID:64): CR=6.3533 | Pred Acc=98.1966
+[INFO]    TT=hadamard, HS=0.1, MV=16 6 8 6, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=99.5400 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] --- BO Iteration 14/120 | Remaining: 3953/3969 ---
+[INFO] Proposing Config (ID:3828): CR=7.0802 | Pred Acc=65.4923
+[INFO]    TT=hadamard, HS=0.9, MV=8 8 8 8, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=99.5900 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] --- BO Iteration 15/120 | Remaining: 3952/3969 ---
+[INFO] Proposing Config (ID:3605): CR=10.2818 | Pred Acc=82.2823
+[INFO]    TT=hadamard, HS=0.9, MV=16 5 8 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=92.8800 < 97.0000)
+[INFO] --- BO Iteration 16/120 | Remaining: 3951/3969 ---
+[INFO] Proposing Config (ID:3783): CR=10.0444 | Pred Acc=87.1259
+[INFO]    TT=hadamard, HS=0.9, MV=8 16 8 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=91.0000 < 97.0000)
+[INFO] --- BO Iteration 17/120 | Remaining: 3950/3969 ---
+[INFO] Proposing Config (ID:2080): CR=7.6493 | Pred Acc=97.6708
+[INFO]    TT=hadamard, HS=0.5, MV=8 6 8 6, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=99.5700 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] --- BO Iteration 18/120 | Remaining: 3949/3969 ---
+[INFO] Proposing Config (ID:1799): CR=7.0469 | Pred Acc=98.8054
+[INFO]    TT=hadamard, HS=0.5, MV=16 10 8 3, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=98.1900 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] --- BO Iteration 19/120 | Remaining: 3948/3969 ---
+[INFO] Proposing Config (ID:2505): CR=6.9210 | Pred Acc=101.3444
+[INFO]    TT=hadamard, HS=0.6, MV=8 8 8 8, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=98.1800 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] --- BO Iteration 20/120 | Remaining: 3947/3969 ---
+[INFO] Proposing Config (ID:316): CR=7.8283 | Pred Acc=100.1884
+[INFO]    TT=hadamard, HS=0.1, MV=8 6 8 6, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=98.6500 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] --- BO Iteration 21/120 | Remaining: 3946/3969 ---
+[INFO] Proposing Config (ID:1639): CR=7.6431 | Pred Acc=99.5141
+[INFO]    TT=hadamard, HS=0.4, MV=8 6 8 6, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=98.5000 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] --- BO Iteration 22/120 | Remaining: 3945/3969 ---
+[INFO] Proposing Config (ID:2521): CR=7.6552 | Pred Acc=99.9748
+[INFO]    TT=hadamard, HS=0.6, MV=8 6 8 6, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=99.7500 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] --- BO Iteration 23/120 | Remaining: 3944/3969 ---
+[INFO] Proposing Config (ID:2962): CR=7.7084 | Pred Acc=99.2752
+[INFO]    TT=hadamard, HS=0.7, MV=8 6 8 6, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=99.3300 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] --- BO Iteration 24/120 | Remaining: 3943/3969 ---
+[INFO] Proposing Config (ID:328): CR=8.5014 | Pred Acc=98.7548
+[INFO]    TT=hadamard, HS=0.1, MV=8 5 8 4, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=98.6900 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] --- BO Iteration 25/120 | Remaining: 3942/3969 ---
+[INFO] Proposing Config (ID:317): CR=7.9463 | Pred Acc=99.1614
+[INFO]    TT=hadamard, HS=0.1, MV=8 6 8 4, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=99.7100 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] --- BO Iteration 26/120 | Remaining: 3941/3969 ---
+[INFO] Proposing Config (ID:318): CR=8.0430 | Pred Acc=99.0645
+[INFO]    TT=hadamard, HS=0.1, MV=8 6 8 3, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=97.8100 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] 🧹 [Batch Pruning] Skipped 1966 dominated configs
+[INFO] --- BO Iteration 27/120 | Remaining: 1974/3969 ---
+[INFO] Proposing Config (ID:758): CR=7.9627 | Pred Acc=98.7304
+[INFO]    TT=hadamard, HS=0.2, MV=8 6 8 4, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=99.5200 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] --- BO Iteration 28/120 | Remaining: 1973/3969 ---
+[INFO] Proposing Config (ID:769): CR=8.4570 | Pred Acc=98.6648
+[INFO]    TT=hadamard, HS=0.2, MV=8 5 8 4, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=98.9300 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] 🧹 [Batch Pruning] Skipped 329 dominated configs
+[INFO] --- BO Iteration 29/120 | Remaining: 1643/3969 ---
+[INFO] Proposing Config (ID:1210): CR=8.4590 | Pred Acc=98.6242
+[INFO]    TT=hadamard, HS=0.3, MV=8 5 8 4, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=99.1900 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] 🧹 [Batch Pruning] Skipped 2 dominated configs
+[INFO] --- BO Iteration 30/120 | Remaining: 1640/3969 ---
+[INFO] Proposing Config (ID:1651): CR=8.4921 | Pred Acc=98.8824
+[INFO]    TT=hadamard, HS=0.4, MV=8 5 8 4, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=98.4000 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] 🧹 [Batch Pruning] Skipped 22 dominated configs
+[INFO] --- BO Iteration 31/120 | Remaining: 1617/3969 ---
+[INFO] Proposing Config (ID:770): CR=8.6808 | Pred Acc=97.8651
+[INFO]    TT=hadamard, HS=0.2, MV=8 5 8 3, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=98.1600 > 97.0000
+[INFO] 🎉 NEW BEST! Max CR: 8.6808
+[INFO] 🧹 [Batch Pruning] Skipped 154 dominated configs
+[INFO] --- BO Iteration 32/120 | Remaining: 1462/3969 ---
+[INFO] Proposing Config (ID:1211): CR=8.8207 | Pred Acc=97.7733
+[INFO]    TT=hadamard, HS=0.3, MV=8 5 8 3, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=98.0300 > 97.0000
+[INFO] 🎉 NEW BEST! Max CR: 8.8207
+[INFO] 🧹 [Batch Pruning] Skipped 100 dominated configs
+[INFO] --- BO Iteration 33/120 | Remaining: 1361/3969 ---
+[INFO] Proposing Config (ID:1652): CR=8.9968 | Pred Acc=97.0607
+[INFO]    TT=hadamard, HS=0.4, MV=8 5 8 3, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=98.5400 > 97.0000
+[INFO] 🎉 NEW BEST! Max CR: 8.9968
+[INFO] 🧹 [Batch Pruning] Skipped 102 dominated configs
+[INFO] --- BO Iteration 34/120 | Remaining: 1258/3969 ---
+[INFO] Proposing Config (ID:2093): CR=9.2292 | Pred Acc=97.9229
+[INFO]    TT=hadamard, HS=0.5, MV=8 5 8 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=96.9700 < 97.0000)
+[INFO] --- BO Iteration 35/120 | Remaining: 1257/3969 ---
+[INFO] Proposing Config (ID:2796): CR=9.0422 | Pred Acc=95.2592
+[INFO]    TT=hadamard, HS=0.7, MV=12 6 8 3, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=97.8700 > 97.0000
+[INFO] 🎉 NEW BEST! Max CR: 9.0422
+[INFO] 🧹 [Batch Pruning] Skipped 24 dominated configs
+[INFO] --- BO Iteration 36/120 | Remaining: 1232/3969 ---
+[INFO] Proposing Config (ID:2450): CR=9.1045 | Pred Acc=97.3916
+[INFO]    TT=hadamard, HS=0.6, MV=10 5 8 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=96.0600 < 97.0000)
+[INFO] --- BO Iteration 37/120 | Remaining: 1231/3969 ---
+[INFO] Proposing Config (ID:3222): CR=9.4053 | Pred Acc=97.0044
+[INFO]    TT=hadamard, HS=0.8, MV=12 8 8 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=95.5500 < 97.0000)
+[INFO] --- BO Iteration 38/120 | Remaining: 1230/3969 ---
+[INFO] Proposing Config (ID:2807): CR=9.2759 | Pred Acc=97.1071
+[INFO]    TT=hadamard, HS=0.7, MV=12 5 8 3, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=97.3700 > 97.0000
+[INFO] 🎉 NEW BEST! Max CR: 9.2759
+[INFO] 🧹 [Batch Pruning] Skipped 122 dominated configs
+[INFO] --- BO Iteration 39/120 | Remaining: 1107/3969 ---
+[INFO] Proposing Config (ID:3931): CR=10.3008 | Pred Acc=50.9403
+[INFO]    TT=hadamard, HS=0.9, MV=5 16 3 8, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=26.6900 < 97.0000)
+[INFO] --- BO Iteration 40/120 | Remaining: 1106/3969 ---
+[INFO] Proposing Config (ID:393): CR=9.5800 | Pred Acc=90.9456
+[INFO]    TT=hadamard, HS=0.1, MV=6 5 6 4, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=94.6900 < 97.0000)
+[INFO] --- BO Iteration 41/120 | Remaining: 1105/3969 ---
+[INFO] Proposing Config (ID:3601): CR=11.7028 | Pred Acc=38.6447
+[INFO]    TT=hadamard, HS=0.9, MV=16 6 3 6, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=25.3100 < 97.0000)
+[INFO] --- BO Iteration 42/120 | Remaining: 1104/3969 ---
+[INFO] Proposing Config (ID:3543): CR=17.3900 | Pred Acc=48.8200
+[INFO]    TT=hadamard, HS=0.9, MV=16 16 3 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=20.7500 < 97.0000)
+[INFO] --- BO Iteration 43/120 | Remaining: 1103/3969 ---
+[INFO] Proposing Config (ID:3274): CR=9.2192 | Pred Acc=94.0643
+[INFO]    TT=hadamard, HS=0.8, MV=10 12 8 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=94.6600 < 97.0000)
+[INFO] --- BO Iteration 44/120 | Remaining: 1102/3969 ---
+[INFO] Proposing Config (ID:2949): CR=9.1790 | Pred Acc=94.3461
+[INFO]    TT=hadamard, HS=0.7, MV=8 8 8 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=96.0500 < 97.0000)
+[INFO] --- BO Iteration 45/120 | Remaining: 1101/3969 ---
+[INFO] Proposing Config (ID:3934): CR=19.2007 | Pred Acc=29.0050
+[INFO]    TT=hadamard, HS=0.9, MV=5 16 3 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=21.8000 < 97.0000)
+[INFO] --- BO Iteration 46/120 | Remaining: 1100/3969 ---
+[INFO] Proposing Config (ID:1847): CR=10.0115 | Pred Acc=53.4200
+[INFO]    TT=hadamard, HS=0.5, MV=16 5 3 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=44.3500 < 97.0000)
+[INFO] --- BO Iteration 47/120 | Remaining: 1099/3969 ---
+[INFO] Proposing Config (ID:3237): CR=9.6578 | Pred Acc=96.0778
+[INFO]    TT=hadamard, HS=0.8, MV=12 6 8 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=95.8400 < 97.0000)
+[INFO] --- BO Iteration 48/120 | Remaining: 1098/3969 ---
+[INFO] Proposing Config (ID:3955): CR=10.6651 | Pred Acc=34.8252
+[INFO]    TT=hadamard, HS=0.9, MV=5 8 3 8, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=25.8900 < 97.0000)
+[INFO] 🧹 [Batch Pruning] Conditionally Skipped 460 configs with CR > 11.0651
+[INFO] --- BO Iteration 49/120 | Remaining: 637/3969 ---
+[INFO] Proposing Config (ID:440): CR=10.9341 | Pred Acc=77.3651
+[INFO]    TT=hadamard, HS=0.1, MV=5 5 3 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=84.4000 < 97.0000)
+[INFO] --- BO Iteration 50/120 | Remaining: 636/3969 ---
+[INFO] Proposing Config (ID:3153): CR=9.4113 | Pred Acc=95.2576
+[INFO]    TT=hadamard, HS=0.8, MV=16 6 8 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=96.6500 < 97.0000)
+[INFO] --- BO Iteration 51/120 | Remaining: 635/3969 ---
+[INFO] Proposing Config (ID:3563): CR=9.9372 | Pred Acc=93.4942
+[INFO]    TT=hadamard, HS=0.9, MV=16 10 8 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=93.3600 < 97.0000)
+[INFO] --- BO Iteration 52/120 | Remaining: 634/3969 ---
+[INFO] Proposing Config (ID:394): CR=9.7211 | Pred Acc=93.9453
+[INFO]    TT=hadamard, HS=0.1, MV=6 5 6 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=94.2700 < 97.0000)
+[INFO] --- BO Iteration 53/120 | Remaining: 633/3969 ---
+[INFO] Proposing Config (ID:2843): CR=9.2279 | Pred Acc=31.6650
+[INFO]    TT=hadamard, HS=0.7, MV=10 12 3 6, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=38.8600 < 97.0000)
+[INFO] --- BO Iteration 54/120 | Remaining: 632/3969 ---
+[INFO] Proposing Config (ID:3147): CR=9.2024 | Pred Acc=34.0089
+[INFO]    TT=hadamard, HS=0.8, MV=16 8 3 8, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=31.0500 < 97.0000)
+[INFO] --- BO Iteration 55/120 | Remaining: 631/3969 ---
+[INFO] Proposing Config (ID:434): CR=9.7007 | Pred Acc=82.8955
+[INFO]    TT=hadamard, HS=0.1, MV=5 6 3 6, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=87.0500 < 97.0000)
+[INFO] 🧹 [Batch Pruning] Conditionally Skipped 240 configs with CR > 10.1007
+[INFO] --- BO Iteration 56/120 | Remaining: 390/3969 ---
+[INFO] Proposing Config (ID:3618): CR=9.4167 | Pred Acc=64.3765
+[INFO]    TT=hadamard, HS=0.9, MV=12 16 6 4, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=95.1000 < 97.0000)
+[INFO] --- BO Iteration 57/120 | Remaining: 389/3969 ---
+[INFO] Proposing Config (ID:3615): CR=9.8540 | Pred Acc=97.3095
+[INFO]    TT=hadamard, HS=0.9, MV=12 16 8 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=92.2800 < 97.0000)
+[INFO] --- BO Iteration 58/120 | Remaining: 388/3969 ---
+[INFO] Proposing Config (ID:3164): CR=9.5724 | Pred Acc=96.0143
+[INFO]    TT=hadamard, HS=0.8, MV=16 5 8 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=96.1500 < 97.0000)
+[INFO] --- BO Iteration 59/120 | Remaining: 387/3969 ---
+[INFO] Proposing Config (ID:2880): CR=9.2648 | Pred Acc=95.7632
+[INFO]    TT=hadamard, HS=0.7, MV=10 6 8 3, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=97.5100 > 97.0000
+[INFO] ⏭️ (CR <= Best)
+[INFO] --- BO Iteration 60/120 | Remaining: 386/3969 ---
+[INFO] Proposing Config (ID:2891): CR=9.5102 | Pred Acc=96.2229
+[INFO]    TT=hadamard, HS=0.7, MV=10 5 8 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=96.2800 < 97.0000)
+[INFO] --- BO Iteration 61/120 | Remaining: 385/3969 ---
+[INFO] Proposing Config (ID:3306): CR=9.5603 | Pred Acc=95.6037
+[INFO]    TT=hadamard, HS=0.8, MV=10 8 8 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=95.6800 < 97.0000)
+[INFO] --- BO Iteration 62/120 | Remaining: 384/3969 ---
+[INFO] Proposing Config (ID:2964): CR=9.5526 | Pred Acc=95.5568
+[INFO]    TT=hadamard, HS=0.7, MV=8 6 8 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=95.8300 < 97.0000)
+[INFO] --- BO Iteration 63/120 | Remaining: 383/3969 ---
+[INFO] Proposing Config (ID:3206): CR=9.2193 | Pred Acc=95.2792
+[INFO]    TT=hadamard, HS=0.8, MV=12 10 8 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=95.7200 < 97.0000)
+[INFO] --- BO Iteration 64/120 | Remaining: 382/3969 ---
+[INFO] Proposing Config (ID:1979): CR=9.4560 | Pred Acc=51.6044
+[INFO]    TT=hadamard, HS=0.5, MV=10 10 3 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=45.7800 < 97.0000)
+[INFO] 🧹 [Batch Pruning] Conditionally Skipped 86 configs with CR > 9.8560
+[INFO] --- BO Iteration 65/120 | Remaining: 295/3969 ---
+[INFO] Proposing Config (ID:2191): CR=9.2049 | Pred Acc=52.3484
+[INFO]    TT=hadamard, HS=0.5, MV=5 8 3 8, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=45.3900 < 97.0000)
+[INFO] 🧹 [Batch Pruning] Conditionally Skipped 113 configs with CR > 9.6049
+[INFO] --- BO Iteration 66/120 | Remaining: 181/3969 ---
+[INFO] Proposing Config (ID:2985): CR=9.4498 | Pred Acc=79.8344
+[INFO]    TT=hadamard, HS=0.7, MV=6 16 6 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=91.8800 < 97.0000)
+[INFO] --- BO Iteration 67/120 | Remaining: 180/3969 ---
+[INFO] Proposing Config (ID:3702): CR=9.4940 | Pred Acc=93.9838
+[INFO]    TT=hadamard, HS=0.9, MV=10 16 6 4, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=94.9500 < 97.0000)
+[INFO] --- BO Iteration 68/120 | Remaining: 179/3969 ---
+[INFO] Proposing Config (ID:2446): CR=9.5188 | Pred Acc=41.1197
+[INFO]    TT=hadamard, HS=0.6, MV=10 6 3 6, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=41.6900 < 97.0000)
+[INFO] --- BO Iteration 69/120 | Remaining: 178/3969 ---
+[INFO] Proposing Config (ID:3165): CR=9.2221 | Pred Acc=74.5010
+[INFO]    TT=hadamard, HS=0.8, MV=16 5 6 4, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=96.4200 < 97.0000)
+[INFO] --- BO Iteration 70/120 | Remaining: 177/3969 ---
+[INFO] Proposing Config (ID:2715): CR=9.4708 | Pred Acc=91.9571
+[INFO]    TT=hadamard, HS=0.7, MV=16 6 6 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=95.0100 < 97.0000)
+[INFO] --- BO Iteration 71/120 | Remaining: 176/3969 ---
+[INFO] Proposing Config (ID:3634): CR=9.5382 | Pred Acc=90.6227
+[INFO]    TT=hadamard, HS=0.9, MV=12 12 6 4, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=96.2100 < 97.0000)
+[INFO] --- BO Iteration 72/120 | Remaining: 175/3969 ---
+[INFO] Proposing Config (ID:3582): CR=9.5929 | Pred Acc=92.6301
+[INFO]    TT=hadamard, HS=0.9, MV=16 8 6 4, AK=(2,), AV=(1, 3)
+[INFO] ✅ Configuration is FEASIBLE. Acc=97.6600 > 97.0000
+[INFO] 🎉 NEW BEST! Max CR: 9.5929
+[INFO] 🧹 [Batch Pruning] Skipped 127 dominated configs
+[INFO] --- BO Iteration 73/120 | Remaining: 47/3969 ---
+[INFO] Proposing Config (ID:3566): CR=9.4944 | Pred Acc=96.4262
+[INFO]    TT=hadamard, HS=0.9, MV=16 10 6 4, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=96.5300 < 97.0000)
+[INFO] --- BO Iteration 74/120 | Remaining: 46/3969 ---
+[INFO] Proposing Config (ID:2636): CR=9.5532 | Pred Acc=56.2513
+[INFO]    TT=hadamard, HS=0.6, MV=5 6 4 6, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=54.0600 < 97.0000)
+[INFO] --- BO Iteration 75/120 | Remaining: 45/3969 ---
+[INFO] Proposing Config (ID:2991): CR=9.5005 | Pred Acc=39.8571
+[INFO]    TT=hadamard, HS=0.7, MV=6 16 3 6, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=35.6600 < 97.0000)
+[INFO] --- BO Iteration 76/120 | Remaining: 44/3969 ---
+[INFO] Proposing Config (ID:3100): CR=9.5906 | Pred Acc=31.9962
+[INFO]    TT=hadamard, HS=0.8, MV=16 16 3 6, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=30.3800 < 97.0000)
+[INFO] --- BO Iteration 77/120 | Remaining: 43/3969 ---
+[INFO] Proposing Config (ID:2174): CR=9.5780 | Pred Acc=65.1451
+[INFO]    TT=hadamard, HS=0.5, MV=5 12 4 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=50.1700 < 97.0000)
+[INFO] --- BO Iteration 78/120 | Remaining: 42/3969 ---
+[INFO] Proposing Config (ID:431): CR=9.5078 | Pred Acc=91.7993
+[INFO]    TT=hadamard, HS=0.1, MV=5 6 4 6, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=85.3400 < 97.0000)
+[INFO] --- BO Iteration 79/120 | Remaining: 41/3969 ---
+[INFO] Proposing Config (ID:3374): CR=9.5569 | Pred Acc=93.6400
+[INFO]    TT=hadamard, HS=0.8, MV=8 10 8 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=94.8600 < 97.0000)
+[INFO] --- BO Iteration 80/120 | Remaining: 40/3969 ---
+[INFO] Proposing Config (ID:3094): CR=9.5249 | Pred Acc=86.0799
+[INFO]    TT=hadamard, HS=0.8, MV=16 16 6 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=92.5600 < 97.0000)
+[INFO] --- BO Iteration 81/120 | Remaining: 39/3969 ---
+[INFO] Proposing Config (ID:2741): CR=9.5211 | Pred Acc=62.2616
+[INFO]    TT=hadamard, HS=0.7, MV=12 16 4 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=50.3300 < 97.0000)
+[INFO] --- BO Iteration 82/120 | Remaining: 38/3969 ---
+[INFO] Proposing Config (ID:2976): CR=9.5148 | Pred Acc=81.5165
+[INFO]    TT=hadamard, HS=0.7, MV=8 5 6 4, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=96.8300 < 97.0000)
+[INFO] --- BO Iteration 83/120 | Remaining: 37/3969 ---
+[INFO] Proposing Config (ID:1716): CR=9.5683 | Pred Acc=92.0982
+[INFO]    TT=hadamard, HS=0.4, MV=6 5 6 4, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=95.1200 < 97.0000)
+[INFO] --- BO Iteration 84/120 | Remaining: 36/3969 ---
+[INFO] Proposing Config (ID:1275): CR=9.5263 | Pred Acc=94.8951
+[INFO]    TT=hadamard, HS=0.3, MV=6 5 6 4, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=95.3900 < 97.0000)
+[INFO] --- BO Iteration 85/120 | Remaining: 35/3969 ---
+[INFO] Proposing Config (ID:2673): CR=9.5238 | Pred Acc=57.1496
+[INFO]    TT=hadamard, HS=0.7, MV=16 12 4 3, AK=(2,), AV=(1, 3)
+[INFO] ❌ INFEASIBLE (Acc=52.5000 < 97.0000)
+[INFO] 🛑 Early Stopping Triggered: Remaining CR Range [9.4954, 9.6032] (Diff=0.1078 <= 0.5000) AND Consecutive Failures (13 > 12.0)
+[INFO] ================ Search Finished ================
+[INFO] Found 31 feasible configurations.
+[INFO] Best Config (CR=9.5929):
+[INFO] {
+  "transform_type": "hadamard",
+  "heads_selection": 0.9,
+  "high_key_max_value": 16,
+  "high_value_max_value": 8,
+  "low_key_max_value": 6,
+  "low_value_max_value": 4,
+  "axis_key": [
+    2
+  ],
+  "axis_value": [
+    1,
+    3
+  ],
+  "cr": 9.5929,
+  "transform_type_id": 0,
+  "transform_type_0": true,
+  "axis_key_id": 0,
+  "axis_key_0": true,
+  "axis_value_id": 0,
+  "axis_value_0": true
+}
+[INFO] Saved all feasible configurations to Qwen2.5-7B-Instruct/hadamard_tolerance_3_all_tasks.json

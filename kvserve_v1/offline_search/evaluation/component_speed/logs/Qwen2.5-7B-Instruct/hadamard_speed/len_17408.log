@@ -1,0 +1,43 @@
+'(ReadTimeoutError("HTTPSConnectionPool(host='hf-mirror.com', port=443): Read timed out. (read timeout=10)"), '(Request ID: b60f15f8-23cf-4740-9724-5bb5efac76b7)')' thrown while requesting HEAD https://hf-mirror.com/datasets/Xnhyacinth/LongBench/resolve/main/README.md
+Retrying in 1s [Retry 1/5].
+'(ReadTimeoutError("HTTPSConnectionPool(host='hf-mirror.com', port=443): Read timed out. (read timeout=10)"), '(Request ID: 142167fb-2302-4d6e-91e0-6d94ab8ff428)')' thrown while requesting HEAD https://hf-mirror.com/datasets/Xnhyacinth/LongBench/resolve/main/README.md
+Retrying in 2s [Retry 2/5].
+'(ReadTimeoutError("HTTPSConnectionPool(host='hf-mirror.com', port=443): Read timed out. (read timeout=10)"), '(Request ID: f6607368-c198-40a5-970e-be19195b8445)')' thrown while requesting HEAD https://hf-mirror.com/datasets/Xnhyacinth/LongBench/resolve/main/README.md
+Retrying in 4s [Retry 3/5].
+'(ReadTimeoutError("HTTPSConnectionPool(host='hf-mirror.com', port=443): Read timed out. (read timeout=10)"), '(Request ID: 1603be61-7042-4de9-962b-67ec6159a10e)')' thrown while requesting HEAD https://hf-mirror.com/datasets/Xnhyacinth/LongBench/resolve/main/README.md
+Retrying in 8s [Retry 4/5].
+'(ReadTimeoutError("HTTPSConnectionPool(host='hf-mirror.com', port=443): Read timed out. (read timeout=10)"), '(Request ID: 9bce10d9-c4ed-49ee-a2d5-e3f49186275e)')' thrown while requesting HEAD https://hf-mirror.com/datasets/Xnhyacinth/LongBench/resolve/main/README.md
+Retrying in 8s [Retry 5/5].
+'(MaxRetryError("HTTPSConnectionPool(host='hf-mirror.com', port=443): Max retries exceeded with url: /datasets/Xnhyacinth/LongBench/resolve/main/README.md (Caused by ConnectTimeoutError(<HTTPSConnection(host='hf-mirror.com', port=443) at 0x7201ff3ccbf0>, 'Connection to hf-mirror.com timed out. (connect timeout=10)'))"), '(Request ID: eb0808a4-a5e4-4e43-8642-139aa4ec0234)')' thrown while requesting HEAD https://hf-mirror.com/datasets/Xnhyacinth/LongBench/resolve/main/README.md
+'(MaxRetryError("HTTPSConnectionPool(host='hf-mirror.com', port=443): Max retries exceeded with url: /datasets/Xnhyacinth/LongBench/resolve/2e9ade51ebf45d98942056c0716234f9d5d257d5/LongBench.py (Caused by ConnectTimeoutError(<HTTPSConnection(host='hf-mirror.com', port=443) at 0x7201ff6ba420>, 'Connection to hf-mirror.com timed out. (connect timeout=10)'))"), '(Request ID: 977f8f9c-276f-47d0-8a9e-bcfc242d33fa)')' thrown while requesting HEAD https://hf-mirror.com/datasets/Xnhyacinth/LongBench/resolve/2e9ade51ebf45d98942056c0716234f9d5d257d5/LongBench.py
+Retrying in 1s [Retry 1/5].
+'(MaxRetryError("HTTPSConnectionPool(host='hf-mirror.com', port=443): Max retries exceeded with url: /datasets/Xnhyacinth/LongBench/resolve/2e9ade51ebf45d98942056c0716234f9d5d257d5/LongBench.py (Caused by ConnectTimeoutError(<HTTPSConnection(host='hf-mirror.com', port=443) at 0x7204c1222c30>, 'Connection to hf-mirror.com timed out. (connect timeout=10)'))"), '(Request ID: 5d916165-9791-4bc8-aa2d-b9e9202fadfe)')' thrown while requesting HEAD https://hf-mirror.com/datasets/Xnhyacinth/LongBench/resolve/2e9ade51ebf45d98942056c0716234f9d5d257d5/LongBench.py
+Retrying in 2s [Retry 2/5].
+'(MaxRetryError("HTTPSConnectionPool(host='hf-mirror.com', port=443): Max retries exceeded with url: /datasets/Xnhyacinth/LongBench/resolve/2e9ade51ebf45d98942056c0716234f9d5d257d5/LongBench.py (Caused by ConnectTimeoutError(<HTTPSConnection(host='hf-mirror.com', port=443) at 0x7201fff2a510>, 'Connection to hf-mirror.com timed out. (connect timeout=10)'))"), '(Request ID: 669b73a7-9413-4b78-a079-da30adbc65d6)')' thrown while requesting HEAD https://hf-mirror.com/datasets/Xnhyacinth/LongBench/resolve/2e9ade51ebf45d98942056c0716234f9d5d257d5/LongBench.py
+Retrying in 4s [Retry 3/5].
+'(MaxRetryError('HTTPSConnectionPool(host=\'hf-mirror.com\', port=443): Max retries exceeded with url: /datasets/Xnhyacinth/LongBench/resolve/2e9ade51ebf45d98942056c0716234f9d5d257d5/LongBench.py (Caused by NewConnectionError("HTTPSConnection(host=\'hf-mirror.com\', port=443): Failed to establish a new connection: [Errno 111] Connection refused"))'), '(Request ID: 72939f32-d6c8-45a4-bc2c-0824884d5b2d)')' thrown while requesting HEAD https://hf-mirror.com/datasets/Xnhyacinth/LongBench/resolve/2e9ade51ebf45d98942056c0716234f9d5d257d5/LongBench.py
+Retrying in 8s [Retry 4/5].
+'(MaxRetryError('HTTPSConnectionPool(host=\'hf-mirror.com\', port=443): Max retries exceeded with url: /datasets/Xnhyacinth/LongBench/resolve/2e9ade51ebf45d98942056c0716234f9d5d257d5/LongBench.py (Caused by NewConnectionError("HTTPSConnection(host=\'hf-mirror.com\', port=443): Failed to establish a new connection: [Errno 111] Connection refused"))'), '(Request ID: a58b75ab-2756-4edc-a14c-6119e10f87d1)')' thrown while requesting HEAD https://hf-mirror.com/datasets/Xnhyacinth/LongBench/resolve/2e9ade51ebf45d98942056c0716234f9d5d257d5/LongBench.py
+Retrying in 8s [Retry 5/5].
+Loading model and tokenizer...
+
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]
+Loading checkpoint shards:  25%|██▌       | 1/4 [00:00<00:01,  1.52it/s]
+Loading checkpoint shards:  50%|█████     | 2/4 [00:01<00:01,  1.60it/s]
+Loading checkpoint shards:  75%|███████▌  | 3/4 [00:01<00:00,  1.65it/s]
+Loading checkpoint shards: 100%|██████████| 4/4 [00:02<00:00,  1.74it/s]
+Loading checkpoint shards: 100%|██████████| 4/4 [00:02<00:00,  1.68it/s]
+Got past_key_values for 28 layers.
+Preparing Hadamard inputs...
+Warming up for 100 iterations...
+Benchmarking for 200 iterations...
+
+--- Benchmark Results ---
+Input length: 17408
+Original size: 0.9297 GB
+Prefill time: 0.0070 s
+Decode time: 0.0052 s
+Prefill throughput: 133.74 GB/s
+Decode throughput: 177.40 GB/s
+-------------------------
+

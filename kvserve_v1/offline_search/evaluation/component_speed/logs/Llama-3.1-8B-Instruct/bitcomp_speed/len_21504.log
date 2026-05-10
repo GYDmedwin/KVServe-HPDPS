@@ -1,0 +1,24 @@
+Loading model and tokenizer...
+
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]
+Loading checkpoint shards:  25%|██▌       | 1/4 [00:00<00:02,  1.25it/s]
+Loading checkpoint shards:  50%|█████     | 2/4 [00:01<00:01,  1.30it/s]
+Loading checkpoint shards:  75%|███████▌  | 3/4 [00:02<00:00,  1.36it/s]
+Loading checkpoint shards: 100%|██████████| 4/4 [00:02<00:00,  1.97it/s]
+Loading checkpoint shards: 100%|██████████| 4/4 [00:02<00:00,  1.67it/s]
+Setting `pad_token_id` to `eos_token_id`:128001 for open-end generation.
+Got past_key_values for 32 layers.
+Preparing quantization and nvcomp inputs...
+Data prepared. Keys shape: torch.Size([32, 8, 21504, 128]), Values shape: torch.Size([32, 8, 21504, 128]), Dtype: torch.uint8
+Warming up for 100 iterations...
+Benchmarking for 200 iterations...
+
+--- Benchmark Results ---
+Input length: 21504
+Original size: 1.3125 GB
+Prefill time: 0.0036 s
+Decode time: 0.0048 s
+Prefill throughput: 361.16 GB/s
+Decode throughput: 273.20 GB/s
+-------------------------
+

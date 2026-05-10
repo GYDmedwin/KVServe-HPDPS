@@ -1,0 +1,15 @@
+{
+    "heads_selection": 0.1,
+    "high_key_max_value": 10,
+    "high_value_max_value": 8,
+    "low_key_max_value": 8,
+    "low_value_max_value": 6,
+    "axis_key": [
+        1,
+        3
+    ],
+    "axis_value": [
+        1,
+        3
+    ]
+}

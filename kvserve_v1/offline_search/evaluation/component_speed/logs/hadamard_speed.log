@@ -1,0 +1,582 @@
+Total number of jobs to run: 64
+---------------------------------
+Starting job 1/64
+  Script: hadamard_speed
+  Params: Length=1024, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_1024.log
+Job 1 completed.
+---------------------------------
+Starting job 2/64
+  Script: hadamard_speed
+  Params: Length=1024, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_1024.log
+Job 2 completed.
+---------------------------------
+Starting job 3/64
+  Script: hadamard_speed
+  Params: Length=2048, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_2048.log
+Job 3 completed.
+---------------------------------
+Starting job 4/64
+  Script: hadamard_speed
+  Params: Length=2048, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_2048.log
+Job 4 completed.
+---------------------------------
+Starting job 5/64
+  Script: hadamard_speed
+  Params: Length=3072, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_3072.log
+Job 5 completed.
+---------------------------------
+Starting job 6/64
+  Script: hadamard_speed
+  Params: Length=3072, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_3072.log
+Job 6 completed.
+---------------------------------
+Starting job 7/64
+  Script: hadamard_speed
+  Params: Length=4096, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_4096.log
+Job 7 completed.
+---------------------------------
+Starting job 8/64
+  Script: hadamard_speed
+  Params: Length=4096, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_4096.log
+Job 8 completed.
+---------------------------------
+Starting job 9/64
+  Script: hadamard_speed
+  Params: Length=5120, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_5120.log
+Job 9 completed.
+---------------------------------
+Starting job 10/64
+  Script: hadamard_speed
+  Params: Length=5120, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_5120.log
+Job 10 completed.
+---------------------------------
+Starting job 11/64
+  Script: hadamard_speed
+  Params: Length=6144, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_6144.log
+Job 11 completed.
+---------------------------------
+Starting job 12/64
+  Script: hadamard_speed
+  Params: Length=6144, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_6144.log
+Job 12 completed.
+---------------------------------
+Starting job 13/64
+  Script: hadamard_speed
+  Params: Length=7168, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_7168.log
+Job 13 completed.
+---------------------------------
+Starting job 14/64
+  Script: hadamard_speed
+  Params: Length=7168, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_7168.log
+Job 14 completed.
+---------------------------------
+Starting job 15/64
+  Script: hadamard_speed
+  Params: Length=8192, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_8192.log
+Job 15 completed.
+---------------------------------
+Starting job 16/64
+  Script: hadamard_speed
+  Params: Length=8192, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_8192.log
+Job 16 completed.
+---------------------------------
+Starting job 17/64
+  Script: hadamard_speed
+  Params: Length=9216, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_9216.log
+Job 17 completed.
+---------------------------------
+Starting job 18/64
+  Script: hadamard_speed
+  Params: Length=9216, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_9216.log
+Job 18 completed.
+---------------------------------
+Starting job 19/64
+  Script: hadamard_speed
+  Params: Length=10240, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_10240.log
+Job 19 completed.
+---------------------------------
+Starting job 20/64
+  Script: hadamard_speed
+  Params: Length=10240, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_10240.log
+Job 20 completed.
+---------------------------------
+Starting job 21/64
+  Script: hadamard_speed
+  Params: Length=11264, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_11264.log
+Job 21 completed.
+---------------------------------
+Starting job 22/64
+  Script: hadamard_speed
+  Params: Length=11264, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_11264.log
+Job 22 completed.
+---------------------------------
+Starting job 23/64
+  Script: hadamard_speed
+  Params: Length=12288, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_12288.log
+Job 23 completed.
+---------------------------------
+Starting job 24/64
+  Script: hadamard_speed
+  Params: Length=12288, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_12288.log
+Job 24 completed.
+---------------------------------
+Starting job 25/64
+  Script: hadamard_speed
+  Params: Length=13312, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_13312.log
+Job 25 completed.
+---------------------------------
+Starting job 26/64
+  Script: hadamard_speed
+  Params: Length=13312, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_13312.log
+Job 26 completed.
+---------------------------------
+Starting job 27/64
+  Script: hadamard_speed
+  Params: Length=14336, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_14336.log
+Job 27 completed.
+---------------------------------
+Starting job 28/64
+  Script: hadamard_speed
+  Params: Length=14336, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_14336.log
+Job 28 completed.
+---------------------------------
+Starting job 29/64
+  Script: hadamard_speed
+  Params: Length=15360, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_15360.log
+Job 29 completed.
+---------------------------------
+Starting job 30/64
+  Script: hadamard_speed
+  Params: Length=15360, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_15360.log
+Job 30 completed.
+---------------------------------
+Starting job 31/64
+  Script: hadamard_speed
+  Params: Length=16384, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_16384.log
+Job 31 completed.
+---------------------------------
+Starting job 32/64
+  Script: hadamard_speed
+  Params: Length=16384, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_16384.log
+Job 32 completed.
+---------------------------------
+Starting job 33/64
+  Script: hadamard_speed
+  Params: Length=17408, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_17408.log
+Job 33 completed.
+---------------------------------
+Starting job 34/64
+  Script: hadamard_speed
+  Params: Length=17408, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_17408.log
+Job 34 completed.
+---------------------------------
+Starting job 35/64
+  Script: hadamard_speed
+  Params: Length=18432, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_18432.log
+Job 35 completed.
+---------------------------------
+Starting job 36/64
+  Script: hadamard_speed
+  Params: Length=18432, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_18432.log
+Job 36 completed.
+---------------------------------
+Starting job 37/64
+  Script: hadamard_speed
+  Params: Length=19456, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_19456.log
+Job 37 completed.
+---------------------------------
+Starting job 38/64
+  Script: hadamard_speed
+  Params: Length=19456, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_19456.log
+Job 38 completed.
+---------------------------------
+Starting job 39/64
+  Script: hadamard_speed
+  Params: Length=20480, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_20480.log
+Job 39 completed.
+---------------------------------
+Starting job 40/64
+  Script: hadamard_speed
+  Params: Length=20480, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_20480.log
+Job 40 completed.
+---------------------------------
+Starting job 41/64
+  Script: hadamard_speed
+  Params: Length=21504, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_21504.log
+Job 41 completed.
+---------------------------------
+Starting job 42/64
+  Script: hadamard_speed
+  Params: Length=21504, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_21504.log
+Job 42 completed.
+---------------------------------
+Starting job 43/64
+  Script: hadamard_speed
+  Params: Length=22528, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_22528.log
+Job 43 completed.
+---------------------------------
+Starting job 44/64
+  Script: hadamard_speed
+  Params: Length=22528, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_22528.log
+Job 44 completed.
+---------------------------------
+Starting job 45/64
+  Script: hadamard_speed
+  Params: Length=23552, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_23552.log
+Job 45 completed.
+---------------------------------
+Starting job 46/64
+  Script: hadamard_speed
+  Params: Length=23552, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_23552.log
+Job 46 completed.
+---------------------------------
+Starting job 47/64
+  Script: hadamard_speed
+  Params: Length=24576, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_24576.log
+Job 47 completed.
+---------------------------------
+Starting job 48/64
+  Script: hadamard_speed
+  Params: Length=24576, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_24576.log
+Job 48 completed.
+---------------------------------
+Starting job 49/64
+  Script: hadamard_speed
+  Params: Length=25600, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_25600.log
+Job 49 completed.
+---------------------------------
+Starting job 50/64
+  Script: hadamard_speed
+  Params: Length=25600, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_25600.log
+Job 50 completed.
+---------------------------------
+Starting job 51/64
+  Script: hadamard_speed
+  Params: Length=26624, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_26624.log
+Job 51 completed.
+---------------------------------
+Starting job 52/64
+  Script: hadamard_speed
+  Params: Length=26624, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_26624.log
+Job 52 completed.
+---------------------------------
+Starting job 53/64
+  Script: hadamard_speed
+  Params: Length=27648, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_27648.log
+Job 53 completed.
+---------------------------------
+Starting job 54/64
+  Script: hadamard_speed
+  Params: Length=27648, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_27648.log
+Job 54 completed.
+---------------------------------
+Starting job 55/64
+  Script: hadamard_speed
+  Params: Length=28672, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_28672.log
+Job 55 completed.
+---------------------------------
+Starting job 56/64
+  Script: hadamard_speed
+  Params: Length=28672, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_28672.log
+Job 56 completed.
+---------------------------------
+Starting job 57/64
+  Script: hadamard_speed
+  Params: Length=29696, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_29696.log
+Job 57 completed.
+---------------------------------
+Starting job 58/64
+  Script: hadamard_speed
+  Params: Length=29696, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_29696.log
+Job 58 completed.
+---------------------------------
+Starting job 59/64
+  Script: hadamard_speed
+  Params: Length=30720, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_30720.log
+Job 59 completed.
+---------------------------------
+Starting job 60/64
+  Script: hadamard_speed
+  Params: Length=30720, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_30720.log
+Job 60 completed.
+---------------------------------
+Starting job 61/64
+  Script: hadamard_speed
+  Params: Length=31744, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_31744.log
+Job 61 completed.
+---------------------------------
+Starting job 62/64
+  Script: hadamard_speed
+  Params: Length=31744, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_31744.log
+Job 62 completed.
+---------------------------------
+Starting job 63/64
+  Script: hadamard_speed
+  Params: Length=32768, Model=Llama-3.1-8B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Llama-3.1-8B-Instruct/hadamard_speed/len_32768.log
+Job 63 completed.
+---------------------------------
+Starting job 64/64
+  Script: hadamard_speed
+  Params: Length=32768, Model=Qwen2.5-7B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-7B-Instruct/hadamard_speed/len_32768.log
+Job 64 completed.
+---------------------------------
+All jobs completed. Check the '/root/workspace/Infer_Comm/evaluation/component_speed/logs' directory for logs.
+Total number of jobs to run: 32
+---------------------------------
+Starting job 1/32
+  Script: hadamard_speed
+  Params: Length=1024, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_1024.log
+Job 1 completed.
+---------------------------------
+Starting job 2/32
+  Script: hadamard_speed
+  Params: Length=2048, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_2048.log
+Job 2 completed.
+---------------------------------
+Starting job 3/32
+  Script: hadamard_speed
+  Params: Length=3072, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_3072.log
+Job 3 completed.
+---------------------------------
+Starting job 4/32
+  Script: hadamard_speed
+  Params: Length=4096, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_4096.log
+Job 4 completed.
+---------------------------------
+Starting job 5/32
+  Script: hadamard_speed
+  Params: Length=5120, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_5120.log
+Job 5 completed.
+---------------------------------
+Starting job 6/32
+  Script: hadamard_speed
+  Params: Length=6144, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_6144.log
+Job 6 completed.
+---------------------------------
+Starting job 7/32
+  Script: hadamard_speed
+  Params: Length=7168, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_7168.log
+Job 7 completed.
+---------------------------------
+Starting job 8/32
+  Script: hadamard_speed
+  Params: Length=8192, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_8192.log
+Job 8 completed.
+---------------------------------
+Starting job 9/32
+  Script: hadamard_speed
+  Params: Length=9216, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_9216.log
+Job 9 completed.
+---------------------------------
+Starting job 10/32
+  Script: hadamard_speed
+  Params: Length=10240, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_10240.log
+Job 10 completed.
+---------------------------------
+Starting job 11/32
+  Script: hadamard_speed
+  Params: Length=11264, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_11264.log
+Job 11 completed.
+---------------------------------
+Starting job 12/32
+  Script: hadamard_speed
+  Params: Length=12288, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_12288.log
+Job 12 completed.
+---------------------------------
+Starting job 13/32
+  Script: hadamard_speed
+  Params: Length=13312, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_13312.log
+Job 13 completed.
+---------------------------------
+Starting job 14/32
+  Script: hadamard_speed
+  Params: Length=14336, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_14336.log
+Job 14 completed.
+---------------------------------
+Starting job 15/32
+  Script: hadamard_speed
+  Params: Length=15360, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_15360.log
+Job 15 completed.
+---------------------------------
+Starting job 16/32
+  Script: hadamard_speed
+  Params: Length=16384, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_16384.log
+Job 16 completed.
+---------------------------------
+Starting job 17/32
+  Script: hadamard_speed
+  Params: Length=17408, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_17408.log
+Job 17 completed.
+---------------------------------
+Starting job 18/32
+  Script: hadamard_speed
+  Params: Length=18432, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_18432.log
+Job 18 completed.
+---------------------------------
+Starting job 19/32
+  Script: hadamard_speed
+  Params: Length=19456, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_19456.log
+Job 19 completed.
+---------------------------------
+Starting job 20/32
+  Script: hadamard_speed
+  Params: Length=20480, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_20480.log
+Job 20 completed.
+---------------------------------
+Starting job 21/32
+  Script: hadamard_speed
+  Params: Length=21504, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_21504.log
+Job 21 completed.
+---------------------------------
+Starting job 22/32
+  Script: hadamard_speed
+  Params: Length=22528, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_22528.log
+Job 22 completed.
+---------------------------------
+Starting job 23/32
+  Script: hadamard_speed
+  Params: Length=23552, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_23552.log
+Job 23 completed.
+---------------------------------
+Starting job 24/32
+  Script: hadamard_speed
+  Params: Length=24576, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_24576.log
+Job 24 completed.
+---------------------------------
+Starting job 25/32
+  Script: hadamard_speed
+  Params: Length=25600, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_25600.log
+Job 25 completed.
+---------------------------------
+Starting job 26/32
+  Script: hadamard_speed
+  Params: Length=26624, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_26624.log
+Job 26 completed.
+---------------------------------
+Starting job 27/32
+  Script: hadamard_speed
+  Params: Length=27648, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_27648.log
+Job 27 completed.
+---------------------------------
+Starting job 28/32
+  Script: hadamard_speed
+  Params: Length=28672, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_28672.log
+Job 28 completed.
+---------------------------------
+Starting job 29/32
+  Script: hadamard_speed
+  Params: Length=29696, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_29696.log
+Job 29 completed.
+---------------------------------
+Starting job 30/32
+  Script: hadamard_speed
+  Params: Length=30720, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_30720.log
+Job 30 completed.
+---------------------------------
+Starting job 31/32
+  Script: hadamard_speed
+  Params: Length=31744, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_31744.log
+Job 31 completed.
+---------------------------------
+Starting job 32/32
+  Script: hadamard_speed
+  Params: Length=32768, Model=Qwen2.5-32B-Instruct
+  Log file: /root/workspace/Infer_Comm/evaluation/component_speed/logs/Qwen2.5-32B-Instruct/hadamard_speed/len_32768.log
+Job 32 completed.
+---------------------------------
+All jobs completed. Check the '/root/workspace/Infer_Comm/evaluation/component_speed/logs' directory for logs.

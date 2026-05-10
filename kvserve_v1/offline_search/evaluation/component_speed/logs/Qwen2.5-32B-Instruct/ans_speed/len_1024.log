@@ -1,0 +1,27 @@
+'(MaxRetryError('HTTPSConnectionPool(host=\'hf-mirror.com\', port=443): Max retries exceeded with url: /datasets/Xnhyacinth/LongBench/resolve/main/README.md (Caused by NewConnectionError("HTTPSConnection(host=\'hf-mirror.com\', port=443): Failed to establish a new connection: [Errno 111] Connection refused"))'), '(Request ID: f03ac169-ce49-4107-a666-6d11416bde21)')' thrown while requesting HEAD https://hf-mirror.com/datasets/Xnhyacinth/LongBench/resolve/main/README.md
+Retrying in 1s [Retry 1/5].
+'(MaxRetryError('HTTPSConnectionPool(host=\'hf-mirror.com\', port=443): Max retries exceeded with url: /datasets/Xnhyacinth/LongBench/resolve/main/README.md (Caused by NewConnectionError("HTTPSConnection(host=\'hf-mirror.com\', port=443): Failed to establish a new connection: [Errno 111] Connection refused"))'), '(Request ID: b1453127-02d9-4e2a-9e6d-71736283b8a8)')' thrown while requesting HEAD https://hf-mirror.com/datasets/Xnhyacinth/LongBench/resolve/main/README.md
+Retrying in 2s [Retry 2/5].
+'(MaxRetryError('HTTPSConnectionPool(host=\'hf-mirror.com\', port=443): Max retries exceeded with url: /datasets/Xnhyacinth/LongBench/resolve/main/README.md (Caused by NewConnectionError("HTTPSConnection(host=\'hf-mirror.com\', port=443): Failed to establish a new connection: [Errno 111] Connection refused"))'), '(Request ID: eae7e9d3-6d08-4640-9d59-b454b015d370)')' thrown while requesting HEAD https://hf-mirror.com/datasets/Xnhyacinth/LongBench/resolve/main/README.md
+Retrying in 4s [Retry 3/5].
+'(MaxRetryError('HTTPSConnectionPool(host=\'hf-mirror.com\', port=443): Max retries exceeded with url: /datasets/Xnhyacinth/LongBench/resolve/main/README.md (Caused by NewConnectionError("HTTPSConnection(host=\'hf-mirror.com\', port=443): Failed to establish a new connection: [Errno 111] Connection refused"))'), '(Request ID: ccfd5f0e-22e2-4be4-8e1d-7e998a62d260)')' thrown while requesting HEAD https://hf-mirror.com/datasets/Xnhyacinth/LongBench/resolve/main/README.md
+Retrying in 8s [Retry 4/5].
+Using the latest cached version of the dataset since Xnhyacinth/LongBench couldn't be found on the Hugging Face Hub
+Found the latest cached dataset configuration '2wikimqa' at /root/.cache/huggingface/datasets/Xnhyacinth___long_bench/2wikimqa/0.0.0/2e9ade51ebf45d98942056c0716234f9d5d257d5 (last modified on Tue Dec 23 11:58:16 2025).
+Loading model and tokenizer...
+Loading checkpoint shards:   0%|          | 0/17 [00:00<?, ?it/s]Loading checkpoint shards:   6%|▌         | 1/17 [00:00<00:11,  1.38it/s]Loading checkpoint shards:  12%|█▏        | 2/17 [00:01<00:10,  1.38it/s]Loading checkpoint shards:  18%|█▊        | 3/17 [00:02<00:10,  1.37it/s]Loading checkpoint shards:  24%|██▎       | 4/17 [00:02<00:09,  1.37it/s]Loading checkpoint shards:  29%|██▉       | 5/17 [00:03<00:08,  1.39it/s]Loading checkpoint shards:  35%|███▌      | 6/17 [00:04<00:07,  1.41it/s]Loading checkpoint shards:  41%|████      | 7/17 [00:05<00:07,  1.42it/s]Loading checkpoint shards:  47%|████▋     | 8/17 [00:05<00:06,  1.42it/s]Loading checkpoint shards:  53%|█████▎    | 9/17 [00:06<00:05,  1.45it/s]Loading checkpoint shards:  59%|█████▉    | 10/17 [00:07<00:04,  1.46it/s]Loading checkpoint shards:  65%|██████▍   | 11/17 [00:07<00:04,  1.47it/s]Loading checkpoint shards:  71%|███████   | 12/17 [00:08<00:03,  1.48it/s]Loading checkpoint shards:  76%|███████▋  | 13/17 [00:09<00:02,  1.49it/s]Loading checkpoint shards:  82%|████████▏ | 14/17 [00:09<00:02,  1.50it/s]Loading checkpoint shards:  88%|████████▊ | 15/17 [00:10<00:01,  1.50it/s]Loading checkpoint shards:  94%|█████████▍| 16/17 [00:11<00:00,  1.50it/s]Loading checkpoint shards: 100%|██████████| 17/17 [00:11<00:00,  1.60it/s]Loading checkpoint shards: 100%|██████████| 17/17 [00:11<00:00,  1.47it/s]
+Got past_key_values for 64 layers.
+Preparing quantization and nvcomp inputs...
+Data prepared. Keys shape: torch.Size([64, 8, 1024, 128]), Values shape: torch.Size([64, 8, 1024, 128]), Dtype: torch.uint8
+Warming up for 100 iterations...
+Benchmarking for 200 iterations...
+
+--- Benchmark Results ---
+Input length: 1024
+Original size: 0.1250 GB
+Prefill time: 0.0006 s
+Decode time: 0.0006 s
+Prefill throughput: 220.02 GB/s
+Decode throughput: 212.33 GB/s
+-------------------------
+

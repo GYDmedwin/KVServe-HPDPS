@@ -1,0 +1,1346 @@
+[
+    {
+        "transform_type": "none",
+        "heads_selection": 0.8,
+        "high_key_max_value": 12,
+        "high_value_max_value": 10,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.4546,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 103.28,
+        "config_id": 0
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.1,
+        "high_key_max_value": 16,
+        "high_value_max_value": 16,
+        "low_key_max_value": 8,
+        "low_value_max_value": 8,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 5.089,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 99.96,
+        "config_id": 1
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 8,
+        "high_value_max_value": 16,
+        "low_key_max_value": 8,
+        "low_value_max_value": 8,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.1208,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 100.0,
+        "config_id": 2
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.1,
+        "high_key_max_value": 8,
+        "high_value_max_value": 8,
+        "low_key_max_value": 8,
+        "low_value_max_value": 8,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.2725,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 99.28,
+        "config_id": 3
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 16,
+        "high_value_max_value": 10,
+        "low_key_max_value": 8,
+        "low_value_max_value": 8,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.0645,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 99.62,
+        "config_id": 4
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.7,
+        "high_key_max_value": 10,
+        "high_value_max_value": 8,
+        "low_key_max_value": 8,
+        "low_value_max_value": 8,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.0486,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 101.36,
+        "config_id": 5
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 10,
+        "high_value_max_value": 12,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.775,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 99.92,
+        "config_id": 6
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.6,
+        "high_key_max_value": 10,
+        "high_value_max_value": 10,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.1356,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 96.68,
+        "config_id": 7
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 12,
+        "high_value_max_value": 10,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.7747,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 99.77,
+        "config_id": 8
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 12,
+        "high_value_max_value": 12,
+        "low_key_max_value": 8,
+        "low_value_max_value": 8,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.0907,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 101.85,
+        "config_id": 9
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 12,
+        "high_value_max_value": 12,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.7209,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 101.92,
+        "config_id": 10
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 10,
+        "high_value_max_value": 10,
+        "low_key_max_value": 8,
+        "low_value_max_value": 8,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.1823,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 101.7,
+        "config_id": 11
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 10,
+        "high_value_max_value": 10,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.8296,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 102.79,
+        "config_id": 12
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 10,
+        "high_value_max_value": 8,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.8982,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 101.43,
+        "config_id": 13
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 12,
+        "high_value_max_value": 8,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.8423,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 101.55,
+        "config_id": 14
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 8,
+        "high_value_max_value": 10,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.8976,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 100.72,
+        "config_id": 15
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 8,
+        "high_value_max_value": 8,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.9674,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 100.83,
+        "config_id": 16
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 10,
+        "high_value_max_value": 6,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.9877,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 102.11,
+        "config_id": 17
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 8,
+        "high_value_max_value": 6,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 8.0585,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 103.85,
+        "config_id": 18
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.7,
+        "high_key_max_value": 8,
+        "high_value_max_value": 6,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.9624,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 100.64,
+        "config_id": 19
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 12,
+        "high_value_max_value": 6,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.9305,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 101.02,
+        "config_id": 20
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.7,
+        "high_key_max_value": 10,
+        "high_value_max_value": 6,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.7621,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 99.89,
+        "config_id": 21
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 8,
+        "high_value_max_value": 8,
+        "low_key_max_value": 8,
+        "low_value_max_value": 8,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.2975,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 100.11,
+        "config_id": 22
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.8,
+        "high_key_max_value": 8,
+        "high_value_max_value": 6,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.9793,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 99.92,
+        "config_id": 23
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.8,
+        "high_key_max_value": 10,
+        "high_value_max_value": 6,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.8447,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 102.91,
+        "config_id": 24
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.8,
+        "high_key_max_value": 8,
+        "high_value_max_value": 8,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.8078,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 100.15,
+        "config_id": 25
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.8,
+        "high_key_max_value": 12,
+        "high_value_max_value": 6,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.738,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 102.3,
+        "config_id": 26
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 8,
+        "high_value_max_value": 12,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.8421,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 100.45,
+        "config_id": 27
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.6,
+        "high_key_max_value": 8,
+        "high_value_max_value": 6,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.9226,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 96.34,
+        "config_id": 28
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 16,
+        "high_value_max_value": 6,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.8423,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 101.77,
+        "config_id": 29
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.5,
+        "high_key_max_value": 8,
+        "high_value_max_value": 6,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.918,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 97.06,
+        "config_id": 30
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.4,
+        "high_key_max_value": 8,
+        "high_value_max_value": 6,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.9227,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 99.28,
+        "config_id": 31
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.3,
+        "high_key_max_value": 8,
+        "high_value_max_value": 6,
+        "low_key_max_value": 8,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.9483,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 97.36,
+        "config_id": 32
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 6,
+        "high_value_max_value": 16,
+        "low_key_max_value": 6,
+        "low_value_max_value": 8,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.8911,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 99.25,
+        "config_id": 33
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 6,
+        "high_value_max_value": 12,
+        "low_key_max_value": 6,
+        "low_value_max_value": 8,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.9796,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 102.64,
+        "config_id": 34
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 6,
+        "high_value_max_value": 10,
+        "low_key_max_value": 6,
+        "low_value_max_value": 8,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 8.0371,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 98.83,
+        "config_id": 35
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 8,
+        "high_value_max_value": 10,
+        "low_key_max_value": 6,
+        "low_value_max_value": 8,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 7.9478,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 99.77,
+        "config_id": 36
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 8,
+        "high_value_max_value": 8,
+        "low_key_max_value": 6,
+        "low_value_max_value": 8,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 8.0178,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 98.68,
+        "config_id": 37
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 6,
+        "high_value_max_value": 8,
+        "low_key_max_value": 6,
+        "low_value_max_value": 8,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 8.1087,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 98.34,
+        "config_id": 38
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.8,
+        "high_key_max_value": 6,
+        "high_value_max_value": 8,
+        "low_key_max_value": 6,
+        "low_value_max_value": 8,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 8.021,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 97.62,
+        "config_id": 39
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 6,
+        "high_value_max_value": 16,
+        "low_key_max_value": 4,
+        "low_value_max_value": 8,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 9.0926,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 98.04,
+        "config_id": 40
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 6,
+        "high_value_max_value": 12,
+        "low_key_max_value": 4,
+        "low_value_max_value": 8,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 9.2103,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 102.87,
+        "config_id": 41
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 6,
+        "high_value_max_value": 10,
+        "low_key_max_value": 4,
+        "low_value_max_value": 8,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 9.287,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 100.68,
+        "config_id": 42
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.9,
+        "high_key_max_value": 6,
+        "high_value_max_value": 8,
+        "low_key_max_value": 4,
+        "low_value_max_value": 8,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 9.3827,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 99.81,
+        "config_id": 43
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.1,
+        "high_key_max_value": 6,
+        "high_value_max_value": 6,
+        "low_key_max_value": 4,
+        "low_value_max_value": 4,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 9.3454,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 97.09,
+        "config_id": 44
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.3,
+        "high_key_max_value": 6,
+        "high_value_max_value": 6,
+        "low_key_max_value": 4,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 9.3795,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 97.09,
+        "config_id": 45
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.3,
+        "high_key_max_value": 6,
+        "high_value_max_value": 6,
+        "low_key_max_value": 6,
+        "low_value_max_value": 4,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 9.3164,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 99.21,
+        "config_id": 46
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.8,
+        "high_key_max_value": 10,
+        "high_value_max_value": 10,
+        "low_key_max_value": 4,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 9.3881,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 102.34,
+        "config_id": 47
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.7,
+        "high_key_max_value": 8,
+        "high_value_max_value": 8,
+        "low_key_max_value": 4,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 9.3363,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 101.13,
+        "config_id": 48
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.6,
+        "high_key_max_value": 6,
+        "high_value_max_value": 8,
+        "low_key_max_value": 4,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 9.3704,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 98.79,
+        "config_id": 49
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.6,
+        "high_key_max_value": 8,
+        "high_value_max_value": 6,
+        "low_key_max_value": 4,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 9.361,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 98.64,
+        "config_id": 50
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.7,
+        "high_key_max_value": 10,
+        "high_value_max_value": 6,
+        "low_key_max_value": 4,
+        "low_value_max_value": 6,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 9.4097,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 100.3,
+        "config_id": 51
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.4,
+        "high_key_max_value": 6,
+        "high_value_max_value": 8,
+        "low_key_max_value": 4,
+        "low_value_max_value": 4,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 9.3615,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 100.11,
+        "config_id": 52
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.4,
+        "high_key_max_value": 8,
+        "high_value_max_value": 6,
+        "low_key_max_value": 4,
+        "low_value_max_value": 4,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 9.335,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 98.53,
+        "config_id": 53
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.6,
+        "high_key_max_value": 8,
+        "high_value_max_value": 10,
+        "low_key_max_value": 4,
+        "low_value_max_value": 4,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 9.3205,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 95.09,
+        "config_id": 54
+    },
+    {
+        "transform_type": "none",
+        "heads_selection": 0.6,
+        "high_key_max_value": 10,
+        "high_value_max_value": 8,
+        "low_key_max_value": 4,
+        "low_value_max_value": 4,
+        "axis_key": [
+            2
+        ],
+        "axis_value": [
+            1,
+            3
+        ],
+        "cr": 9.3156,
+        "transform_type_id": 0,
+        "transform_type_0": true,
+        "axis_key_id": 0,
+        "axis_key_0": true,
+        "axis_value_id": 0,
+        "axis_value_0": true,
+        "accuracy": 99.21,
+        "config_id": 55
+    }
+]
