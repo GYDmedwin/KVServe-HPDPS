@@ -20,9 +20,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from offline_search.evaluation.param_search.cr_evaluator import CompressionEvaluator
 from offline_search.evaluation.param_search.acc_evaluator import AccuracyEvaluator
 
-# ================= 配置区域 =================
+# ================= Configuration =================
 
-# 2. 目标设置
+# Target constraints and search budget.
 BASELINE_ACC = 100
 ACC_TOLERANCE = 3
 TARGET_ACC_THRESHOLD = BASELINE_ACC - ACC_TOLERANCE
@@ -31,7 +31,7 @@ MAX_ITER = 5
 EXPLORATION_WEIGHT = 1
 SEED = 42
 WHETHER_TO_EXPLORE = True
-# 3. 搜索空间 (保持不变)
+# Parameter search space.
 SEARCH_SPACE = {
     "transform_type": ["hadamard"],
     "heads_selection": [0.3, 0.5, 0.7, 0.9], 
@@ -45,10 +45,13 @@ SEARCH_SPACE = {
 MODEL_NAME = "Qwen2.5-7B-Instruct"
 TASK_TO_SEARCH = ["longbench_2wikimqa"]
 DATASET_LIMIT = 5
+BATCH_SIZE = 2
 CACHE_CSV_PATH = "search_space.csv"
 FINAL_JSON_PATH = f"tolerance_{ACC_TOLERANCE}_results.json"
+BASE_MODEL_PATH = "/root/data/models"
+BASE_CONFIG_PATH = "/root/workspaces/KVServe_opensourced/kvserve_v1/offline_search/duo_config"
 
-# ================= 工具函数 =================
+# ================= Utilities =================
 
 def is_valid_config(params):
     try:
@@ -63,7 +66,7 @@ def is_valid_config(params):
     except KeyError: return False
 
 def silent_call(func, *args, **kwargs):
-    # 禁用 logging 输出 (CRITICAL 及以下级别都不显示)
+    # Suppress logging output while running noisy evaluation code.
     logging.disable(logging.CRITICAL)
     
     temp_stdout = io.StringIO()
@@ -72,13 +75,13 @@ def silent_call(func, *args, **kwargs):
         with redirect_stdout(temp_stdout), redirect_stderr(temp_stderr):
             return func(*args, **kwargs)
     finally:
-        # 恢复 logging
+        # Restore logging after the wrapped call finishes.
         logging.disable(logging.NOTSET)
 
 def run_cr(evaluator, params):
     logging.info(f"   >>> Running Compression Evaluation ")
     try:
-        # 直接调用函数
+        # Evaluate compression ratio for the provided parameter set.
         cr = evaluator.evaluate(params)
         return cr
     except Exception as e:
@@ -99,16 +102,13 @@ def bigger_pruning_select_by(df, current_params, current_idx, current_iteration,
     if current_iteration < MAX_ITER / 5:
         return []
     
-    # 1. 构建隔离掩码 (Isolation Mask)
-    # 逻辑：找出 DataFrame 中所有与 current_params 在 isolation_columns 上值完全相同的行
+    # Build the isolation mask: keep rows that match current_params on all isolation columns.
     isolation_mask = pd.Series(True, index=df.index)
     for col in isolation_columns:
         if col in df.columns:
             isolation_mask &= (df[col] == current_params[col])
 
-    # 2. 构建条件掩码 (Weaker Mask)
-    # 逻辑：定义参数的单调性。
-    # 过滤掉压缩力度更大的参数
+    # Build the weaker mask according to the monotonicity assumption over compression strength.
     max_value = max(current_params['high_key_max_value'], current_params['high_value_max_value'], current_params['low_key_max_value'], current_params['low_value_max_value'])
     min_value = min(current_params['high_key_max_value'], current_params['high_value_max_value'], current_params['low_key_max_value'], current_params['low_value_max_value'])
     
@@ -118,13 +118,13 @@ def bigger_pruning_select_by(df, current_params, current_idx, current_iteration,
     else:
         return []
     
-    # 3. 排除自己 (Not Self)
+    # Exclude the current row.
     not_self = (df.index != current_idx)    
 
-    # 4. 合并所有掩码
+    # Combine all pruning conditions.
     final_mask = isolation_mask & weaker_mask & not_self
     
-    # 5. 返回满足条件的索引
+    # Return matching candidate indices.
     return df[final_mask].index.tolist()
 
 def smaller_pruning_select_by(df, current_params, current_idx, current_iteration, isolation_columns):
@@ -136,8 +136,8 @@ def smaller_pruning_select_by(df, current_params, current_idx, current_iteration
         if col in df.columns:
             isolation_mask &= (df[col] == current_params[col])
 
-    # CR 比当前小 (更保守)
-    # 使用 epsilon 确保不会剪掉 CR 非常接近的点
+    # Keep candidates with a lower, more conservative compression ratio.
+    # The epsilon margin prevents pruning near-tie configurations.
     conservative_mask = pd.Series(True, index=df.index)
     conservative_mask &= (df['cr'] <= current_params['cr'] - PRUNING_EPSILON / 2)
     
@@ -147,18 +147,18 @@ def smaller_pruning_select_by(df, current_params, current_idx, current_iteration
 
 def process_one_hot_encoding(df, encode_cols, current_feature_cols):
     """
-    通用独热编码处理函数。
+    Add one-hot encoded feature columns for categorical search parameters.
     
     Args:
-        df (pd.DataFrame): 搜索空间的 DataFrame。
-        encode_cols (list): 需要进行独热编码的列名列表，例如 ['axis_key', 'axis_value']。
-        current_feature_cols (list): 当前用于 GP 模型的数值特征列列表。
+        df (pd.DataFrame): Search-space dataframe.
+        encode_cols (list): Column names to one-hot encode, e.g. ['axis_key', 'axis_value'].
+        current_feature_cols (list): Existing numeric feature columns used by the GP model.
         
     Returns:
-        df (pd.DataFrame): 包含新生成 One-Hot 列的 DataFrame。
-        final_feature_cols (list): 更新后的特征列列表（加入了 One-Hot 列）。
+        df (pd.DataFrame): Dataframe with newly generated one-hot columns.
+        final_feature_cols (list): Updated feature list including the one-hot columns.
     """
-    # 复制一份特征列表，避免修改原对象
+    # Copy the feature list to avoid mutating the caller-owned object.
     final_feature_cols = list(current_feature_cols)
     
     for col in encode_cols:
@@ -166,56 +166,52 @@ def process_one_hot_encoding(df, encode_cols, current_feature_cols):
             print(f"[Warning] Column '{col}' not found in DataFrame. Skipping.")
             continue
             
-        # 1. 建立映射 (Value -> Integer ID)
-        # 为了处理 list 等不可哈希类型，先统一转为 tuple (如果是 list 的话)
-        # 如果已经是 tuple 或 int/str，这步操作是安全的
+        # Build a value-to-ID mapping. Lists are converted to tuples so they are hashable.
         try:
-            # 尝试直接获取唯一值
+            # Fast path for already-hashable values.
             unique_vals = sorted(list(set(df[col])))
         except TypeError:
-            # 如果报错（通常是因为列里存的是 list，不可哈希），则先临时转为 tuple
+            # Handle list-valued cells by normalizing them to tuples first.
             temp_series = df[col].apply(lambda x: tuple(x) if isinstance(x, list) else x)
             unique_vals = sorted(list(set(temp_series)))
 
         val_map = {v: i for i, v in enumerate(unique_vals)}
         
-        # 2. 生成 ID 列 (例如 axis_key -> axis_key_id)
-        # 使用 apply 而不是 map，避开 pandas 的 tuple 索引 bug
+        # Generate an ID column, e.g. axis_key -> axis_key_id.
+        # Use apply instead of map to avoid pandas tuple-indexing edge cases.
         id_col_name = f"{col}_id"
         
-        # 注意：这里要确保查表时用的 key 类型和 val_map 里的 key 一致
-        # 如果上面做了 list->tuple 转换，这里查表也要转
+        # Match the lookup key type with the keys stored in val_map.
         def get_id(x):
             key = tuple(x) if isinstance(x, list) else x
             return val_map[key]
             
         df[id_col_name] = df[col].apply(get_id)
         
-        # 3. 生成 One-Hot 列
-        # prefix=col 会生成如 "axis_key_0", "axis_key_1" 这样的列名
+        # Generate one-hot columns such as "axis_key_0" and "axis_key_1".
         dummies = pd.get_dummies(df[id_col_name], prefix=col)
         
-        # 4. 拼接到原 DF
+        # Append the generated columns to the dataframe.
         df = pd.concat([df, dummies], axis=1)
         
-        # 5. 更新特征列表
-        # 将新生成的 dummy 列名加入 feature_cols
+        # Add the generated dummy columns to the GP feature list.
         new_cols = list(dummies.columns)
         final_feature_cols.extend(new_cols)
         
-        # [可选] 将 ID 列也加入，方便后续剪枝逻辑使用（如果你的剪枝逻辑依赖 _id 列）
-        # 如果剪枝逻辑用原始列（如 axis_key）判断，则不需要加 ID 列到 feature_cols
-        # 这里只返回给 GP 用的 numerical columns
+        # The ID columns are intentionally not added to the GP feature list; only
+        # the one-hot columns are returned as numerical model features.
         
     return df, final_feature_cols
 
 def check_early_stopping(df, bo):
     """
-    检查是否满足早退条件：
-    1. 剩余搜索空间的 CR 最大值与最小值之差 <= 2 * PRUNING_EPSILON
-    2. 连续失败次数 (consecutive_fail_count) > MAX_ITER / 10
+    Check whether the search should stop early.
+
+    Conditions:
+        1. The remaining CR range is no larger than 2 * PRUNING_EPSILON.
+        2. The consecutive failure count exceeds MAX_ITER / 10.
     """
-    # 找出剩余未探索的索引
+    # Identify remaining candidates that have not been evaluated or pruned.
     visited = set(bo.observed_indices) | bo.skipped_indices
     remaining_mask = ~df.index.isin(visited)
     
@@ -236,7 +232,7 @@ def check_early_stopping(df, bo):
         
     return False
 
-# ================= 贝叶斯优化类 (保持不变) =================
+# ================= Bayesian Optimization =================
 
 class ConstraintAwareBO:
     def __init__(self, candidate_pool_df, seed=42):
@@ -255,13 +251,13 @@ class ConstraintAwareBO:
         self.scaler_fitted = False
 
     def _prepare_data(self):
-        """辅助函数：确保在第一次使用前 scaler 已经 fit 好了"""
-        # 只有当 feature_cols 被赋值后，才能进行 fit
+        """Fit the feature scaler before it is used for the first time."""
+        # The scaler can only be fit after feature_cols has been assigned.
         if not self.scaler_fitted:
             if not self.feature_cols:
-                return # 还没准备好
+                return # Features are not ready yet.
             
-            # 对整个搜索空间的所有特征进行数据归一化
+            # Fit normalization statistics over the full search space.
             X_all = self.candidates[self.feature_cols].values
             self.scaler.fit(X_all)
             self.scaler_fitted = True
@@ -275,7 +271,7 @@ class ConstraintAwareBO:
         
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            # 喂给 GP 的是归一化后的数据
+            # The GP model is trained on normalized features.
             self.gp.fit(X_scaled, y)
 
     def propose_next(self, threshold, exploration_weight=0.1):
@@ -288,17 +284,17 @@ class ConstraintAwareBO:
             z_scores = (mu - threshold) / sigma
         prob_feasible = norm.cdf(z_scores)
         
-        # 基础分：期望压缩率
+        # Base score: expected compression ratio under feasibility probability.
         base_score = self.candidates["cr"].values * prob_feasible
         
-        # 探索分：不确定性 (Sigma) * 权重
+        # Exploration bonus: predictive uncertainty weighted by exploration_weight.
         norm_sigma = sigma / sigma.max() if sigma.max() > 0 else sigma
         exploration_score = norm_sigma * exploration_weight * self.candidates["cr"].mean()
         if not WHETHER_TO_EXPLORE: exploration_score = 0
         
         acquisition_scores = base_score + exploration_score
         
-        # 屏蔽已观测和剪枝的点
+        # Mask candidates that have already been observed or pruned.
         for idx in self.observed_indices: acquisition_scores[idx] = -1.0
         for idx in self.skipped_indices: acquisition_scores[idx] = -1.0
 
@@ -306,7 +302,7 @@ class ConstraintAwareBO:
         if acquisition_scores[best_idx] == -1.0: return None, 0.0, 0.0 
         return best_idx, prob_feasible[best_idx], mu[best_idx]
 
-# ================= 主流程 =================
+# ================= Main Flow =================
 
 def main():
     # ====================================================
@@ -372,7 +368,12 @@ def main():
     if not df_to_evaluate.empty:
         logging.info(f"Evaluating CR for {len(df_to_evaluate)} configurations...")
         logging.info("=== Initializing Compression Evaluator ===")
-        cr_evaluator = silent_call(CompressionEvaluator, model_name=MODEL_NAME)        
+        cr_evaluator = silent_call(
+            CompressionEvaluator,
+            model_name=MODEL_NAME,
+            base_model_path=BASE_MODEL_PATH,
+            base_config_path=BASE_CONFIG_PATH,
+        )
         crs = []
         for i, (_, row) in enumerate(df_to_evaluate.iterrows()):
             if (i + 1) % 10 == 0: logging.info(f"Processing new CR... {i+1}/{len(df_to_evaluate)}")
@@ -381,7 +382,7 @@ def main():
 
         logging.info(f"Finished evaluating {len(df_to_evaluate)} new configurations.")
 
-        # 显式释放资源
+        # Explicitly release evaluator resources before accuracy evaluation.
         del cr_evaluator
         gc.collect()
         torch.cuda.empty_cache()        
@@ -403,7 +404,16 @@ def main():
     df = pd.concat([df_cached, df_newly_evaluated], ignore_index=True)
 
     logging.info("=== Initializing Accuracy Evaluator ===")
-    acc_evaluator = silent_call(AccuracyEvaluator, model_name=MODEL_NAME, tasks=TASK_TO_SEARCH, limit=DATASET_LIMIT, random_seed=SEED)
+    acc_evaluator = silent_call(
+        AccuracyEvaluator,
+        model_name=MODEL_NAME,
+        tasks=TASK_TO_SEARCH,
+        limit=DATASET_LIMIT,
+        batch_size=BATCH_SIZE,
+        random_seed=SEED,
+        base_model_path=BASE_MODEL_PATH,
+        base_config_path=BASE_CONFIG_PATH,
+    )
 
     # The rest of the processing happens on the combined dataframe
     if len(df) == 0:
@@ -415,25 +425,22 @@ def main():
     
     logging.info("Processing One-Hot Encodings for GP Model...")
 
-    # 1. 定义基础特征列 (数值型参数)
+    # Define numeric base feature columns.
     base_feature_cols = [
         "heads_selection", 
         "high_key_max_value", "high_value_max_value",
         "low_key_max_value", "low_value_max_value"
     ]
     
-    # 2. 定义需要 One-Hot 编码的非连续列
-    # 只要 SEARCH_SPACE 里有的非连续列，都加到这里
+    # Define categorical or tuple-valued columns that should be one-hot encoded.
     cols_to_encode = ["transform_type", "axis_key", "axis_value"]
     
-    # 3. 调用 process_one_hot_encoding 
-    # 这个函数会自动生成 ID 列 (axis_key_id) 和 One-Hot 列 (axis_key_0, axis_key_1...)
-    # 并返回更新后的 df 和特征列表
+    # Generate one-hot columns and return the updated dataframe and GP feature list.
     df, gp_feature_cols = process_one_hot_encoding(df, cols_to_encode, base_feature_cols)
     
     logging.info(f"Features for GP Model: {gp_feature_cols}")
 
-    # ================= Phase 2: 贝叶斯优化 =================
+    # ================= Phase 2: Bayesian Optimization =================
     logging.info("=== Phase 2: Bayesian Optimization Search ===")
     
     logging.info(f"Target Accuracy: >= {TARGET_ACC_THRESHOLD:.4f}")
@@ -448,12 +455,12 @@ def main():
     feasible_configs = []
     config_id = 0
     if len(df) > 3:
-        # 按 CR 排序
+        # Sort by compression ratio.
         sorted_df = df.sort_values("cr")
-        idx_min = sorted_df.index[0]                  # CR 最小 (最安全)
-        idx_max = sorted_df.index[-1]                 # CR 最大 (最危险)
-        idx_mid = sorted_df.index[len(sorted_df)//2]  # CR 中位数 (边界探索)
-        # 严格顺序: Max -> Mid -> Min，并去重
+        idx_min = sorted_df.index[0]                  # Lowest CR, most conservative.
+        idx_max = sorted_df.index[-1]                 # Highest CR, most aggressive.
+        idx_mid = sorted_df.index[len(sorted_df)//2]  # Median CR, near the decision boundary.
+        # Evaluate in strict Max -> Mid -> Min order while removing duplicates.
         candidates = [idx_max, idx_mid, idx_min]
         selected_indices = []
         seen = set()
@@ -508,7 +515,7 @@ def main():
         logging.info(f"--- BO Iteration {i+1}/{MAX_ITER} | Remaining: {remaining_count}/{total_configs} ---")
         
         bo.fit()
-        # 探索权重衰减
+        # Decay the exploration weight as the search progresses.
         if i < MAX_ITER / 5:
             current_weight = max(0.1, EXPLORATION_WEIGHT * (0.99 ** i))
         else:
