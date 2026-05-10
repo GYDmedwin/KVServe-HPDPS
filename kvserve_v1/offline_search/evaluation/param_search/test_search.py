@@ -17,8 +17,8 @@ import gc
 from contextlib import redirect_stdout, redirect_stderr
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-from Infer_Comm.evaluation.param_search.cr_evaluator import CompressionEvaluator
-from Infer_Comm.evaluation.param_search.acc_evaluator_batch import AccuracyEvaluator
+from offline_search.evaluation.param_search.cr_evaluator import CompressionEvaluator
+from offline_search.evaluation.param_search.acc_evaluator import AccuracyEvaluator
 
 # ================= 配置区域 =================
 
@@ -27,26 +27,26 @@ BASELINE_ACC = 100
 ACC_TOLERANCE = 3
 TARGET_ACC_THRESHOLD = BASELINE_ACC - ACC_TOLERANCE
 PRUNING_EPSILON = 0.2
-MAX_ITER = 120
+MAX_ITER = 5
 EXPLORATION_WEIGHT = 1
 SEED = 42
 WHETHER_TO_EXPLORE = True
 # 3. 搜索空间 (保持不变)
 SEARCH_SPACE = {
     "transform_type": ["hadamard"],
-    "heads_selection": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], 
-    "high_key_max_value": [16, 12, 10, 8, 6, 5],
-    "high_value_max_value": [16, 12, 10, 8, 6, 5],
-    "low_key_max_value": [8, 6, 4, 3],
-    "low_value_max_value": [8, 6, 4, 3],
+    "heads_selection": [0.3, 0.5, 0.7, 0.9], 
+    "high_key_max_value": [12, 10, 8],
+    "high_value_max_value": [12, 10, 8],
+    "low_key_max_value": [6, 4],
+    "low_value_max_value": [6, 4],
     "axis_key_options": [(2,)],
     "axis_value_options": [(1, 3)]
 }
 MODEL_NAME = "Qwen2.5-7B-Instruct"
-TASK_TO_SEARCH = ["gsm8k_cot_llama", "humaneval_instruct", "longbench_multi_news", "longbench_qasper"]
-DATASET_LIMIT = 50
-CACHE_CSV_PATH = "hadamard_search_space_new.csv"
-FINAL_JSON_PATH = f"hadamard_tolerance_{ACC_TOLERANCE}_all_tasks.json"
+TASK_TO_SEARCH = ["longbench_2wikimqa"]
+DATASET_LIMIT = 5
+CACHE_CSV_PATH = "search_space.csv"
+FINAL_JSON_PATH = f"tolerance_{ACC_TOLERANCE}_results.json"
 
 # ================= 工具函数 =================
 
@@ -338,10 +338,10 @@ def main():
     df_to_evaluate = df_all_configs
     df_cached = pd.DataFrame()
 
-    if os.path.exists(f"{MODEL_NAME}/{CACHE_CSV_PATH}"):
+    if os.path.exists(f"results/{MODEL_NAME}/{CACHE_CSV_PATH}"):
         try:
-            logging.info(f"Found cache: {MODEL_NAME}/{CACHE_CSV_PATH}. Loading cached CR values.")
-            df_cache = pd.read_csv(f"{MODEL_NAME}/{CACHE_CSV_PATH}")
+            logging.info(f"Found cache: results/{MODEL_NAME}/{CACHE_CSV_PATH}. Loading cached CR values.")
+            df_cache = pd.read_csv(f"results/{MODEL_NAME}/{CACHE_CSV_PATH}")
             
             # Ensure tuple columns from CSV (read as strings) are converted back to tuples
             for col in ['axis_key', 'axis_value']:
@@ -364,7 +364,7 @@ def main():
             logging.info(f"{len(df_cached)} configs found in cache. {len(df_to_evaluate)} new configs to evaluate.")
             
         except Exception as e:
-            logging.warning(f"Could not load or parse cache file '{MODEL_NAME}/{CACHE_CSV_PATH}'. Re-evaluating all. Error: {e}")
+            logging.warning(f"Could not load or parse cache file 'results/{MODEL_NAME}/{CACHE_CSV_PATH}'. Re-evaluating all. Error: {e}")
             df_to_evaluate = df_all_configs
             df_cached = pd.DataFrame()
     
@@ -393,11 +393,11 @@ def main():
         df_save = df_newly_evaluated[df_newly_evaluated['cr'] > 0].copy()
         if not df_save.empty:
             save_cols = keys + ['cr']
-            os.makedirs(MODEL_NAME, exist_ok=True)
-            file_exists = os.path.exists(f"{MODEL_NAME}/{CACHE_CSV_PATH}")
-            df_save[save_cols].to_csv(f"{MODEL_NAME}/{CACHE_CSV_PATH}", mode='a', index=False, header=not file_exists)
-            logging.info(f"Appended {len(df_save)} new configurations to {MODEL_NAME}/{CACHE_CSV_PATH}")
-            return
+            os.makedirs(f"results/{MODEL_NAME}", exist_ok=True)
+            file_exists = os.path.exists(f"results/{MODEL_NAME}/{CACHE_CSV_PATH}")
+            df_save[save_cols].to_csv(f"results/{MODEL_NAME}/{CACHE_CSV_PATH}", mode='a', index=False, header=not file_exists)
+            logging.info(f"Appended {len(df_save)} new configurations to results/{MODEL_NAME}/{CACHE_CSV_PATH}")
+            # return
 
     # Combine cached and newly evaluated results
     df = pd.concat([df_cached, df_newly_evaluated], ignore_index=True)
@@ -577,20 +577,20 @@ def main():
         i += 1
 
     logging.info("================ Search Finished ================")
-    os.makedirs(MODEL_NAME, exist_ok=True)
+    os.makedirs(f"results/{MODEL_NAME}", exist_ok=True)
     if feasible_configs:
         logging.info(f"Found {len(feasible_configs)} feasible configurations.")
         if best_config:
              logging.info(f"Best Config (CR={best_feasible_cr:.4f}):")
              logging.info(json.dumps(best_config, indent=2, default=str))
 
-        with open(f"{MODEL_NAME}/{FINAL_JSON_PATH}", "w") as f:
+        with open(f"results/{MODEL_NAME}/{FINAL_JSON_PATH}", "w") as f:
             json.dump(feasible_configs, f, indent=4, default=str)
-        logging.info(f"Saved all feasible configurations to {MODEL_NAME}/{FINAL_JSON_PATH}")
+        logging.info(f"Saved all feasible configurations to results/{MODEL_NAME}/{FINAL_JSON_PATH}")
     elif best_config:
         final = {k: v for k, v in best_config.items()}
         logging.info(json.dumps(final, indent=2, default=str))
-        with open(f"{MODEL_NAME}/{FINAL_JSON_PATH}", "w") as f:
+        with open(f"results/{MODEL_NAME}/{FINAL_JSON_PATH}", "w") as f:
             json.dump(final, f, indent=4, default=str)
 
 if __name__ == "__main__":

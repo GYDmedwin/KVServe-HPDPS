@@ -15,11 +15,11 @@ from contextlib import contextmanager
 from lm_eval.tasks import TaskManager, get_task_dict
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-from Infer_Comm.evaluation.lm_eval import lm_wrapper, lm_evaluator
+from offline_search.evaluation.lm_eval import lm_wrapper, lm_evaluator
 
 # 硬编码路径 (参考自 custom_cr.py)
-BASE_MODEL_PATH = "/home/bingxing2/home/scx9kvs/mxy/models"
-BASE_CONFIG_PATH = "/home/bingxing2/home/scx9kvs/mxy/Infer_Comm/duo_config"
+BASE_MODEL_PATH = "/root/data/models"
+BASE_CONFIG_PATH = "/root/workspaces/KVServe_opensourced/kvserve_v1/offline_search/duo_config"
 TASK_TO_CHAT_TEMPLATE = {
     "longbench_lcc": False,
     "longbench_lcc_e": False,
@@ -45,27 +45,27 @@ TASK_TO_CHAT_TEMPLATE = {
 }
 
 @contextmanager
-def suppress_fd_stderr():
+def suppress_fd_stderr(enabled=True):
     """
     在 OS 层面屏蔽 stderr (文件描述符 2)。
-    这可以屏蔽 subprocess (如 git) 和 C 扩展库的直接输出。
+    可以通过 enabled 参数控制是否真正屏蔽。
     """
-    # 打开空设备
+    if not enabled:
+        # 不屏蔽，直接进入上下文
+        yield
+        return
+
     devnull = os.open(os.devnull, os.O_WRONLY)
-    # 备份原本的 stderr 文件描述符 (通常是 2)
     original_stderr_fd = os.dup(2)
-    
     try:
-        # 将 stderr (2) 重定向到 devnull
         sys.stderr.flush()
         os.dup2(devnull, 2)
         yield
     finally:
-        # 恢复原本的 stderr
         os.dup2(original_stderr_fd, 2)
-        # 关闭临时打开的文件描述符
         os.close(devnull)
         os.close(original_stderr_fd)
+ 
 
 class AccuracyEvaluator:
     def __init__(self, model_name="Meta-Llama-3.1-8B-Instruct", tasks=["longbench_hotpotqa"], limit=100, device="cuda", random_seed=42):
@@ -155,10 +155,11 @@ class AccuracyEvaluator:
         for results in default_results:
             for task_name, metrics in results['results'].items():
                 # print(f"Task: {task_name}")
+                # print(metrics)
                 for metric_name, value in metrics.items():
-                    if not "_stderr" in metric_name and metric_name != "alias":
+                    if "score" in metric_name and not "_stderr" in metric_name:
                         # 格式化浮点数，保留4位小数
-                        # print(f"  {metric_name}: {value:.4f}")
+                        print(f"  {metric_name}: {value}")
                         default_values.append(round(value, 4))
                         # break
         self.default_scores = np.array(default_values)
@@ -210,7 +211,7 @@ class AccuracyEvaluator:
             for task_name, metrics in results['results'].items():
                 # print(f"Task: {task_name}")
                 for metric_name, value in metrics.items():
-                    if not "_stderr" in metric_name and metric_name != "alias":
+                    if "score" in metric_name and not "_stderr" in metric_name:
                         # 格式化浮点数，保留4位小数
                         # print(f"  {metric_name}: {value:.4f}")
                         custom_values.append(round(value, 4))
@@ -235,7 +236,7 @@ class AccuracyEvaluator:
 #     "axis_key": [2],
 #     "axis_value": [1, 3],
 # }
-# eva = AccuracyEvaluator(tasks=["longbench_qasper", "longbench_2wikimqa", "longbench_hotpotqa", "gsm8k_cot"], model_name="Meta-Llama-3.1-8B-Instruct", limit=50)
+# eva = AccuracyEvaluator(tasks=["longbench_2wikimqa"], model_name="Qwen2.5-7B-Instruct", limit=5)
 # eva.evaluate(params)
 # 优化剪枝逻辑，先选择一半的数据集计算准确率
 # 如果准确率高于tolerance，继续计算剩余一半的数据集

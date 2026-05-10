@@ -15,11 +15,11 @@ from contextlib import contextmanager
 from lm_eval.tasks import TaskManager, get_task_dict
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-from Infer_Comm.evaluation.lm_eval import lm_wrapper, lm_evaluator
+from offline_search.evaluation.lm_eval import lm_wrapper, lm_evaluator
 
 # 硬编码路径 (参考自 custom_cr.py)
-BASE_MODEL_PATH = "/root/workspace/models"
-BASE_CONFIG_PATH = "/root/workspace/Infer_Comm/duo_config"
+BASE_MODEL_PATH = "/root/data/models"
+BASE_CONFIG_PATH = "/root/workspaces/KVServe_opensourced/kvserve_v1/offline_search/duo_config"
 TASK_TO_CHAT_TEMPLATE = {
     "longbench_lcc": False,
     "longbench_lcc_e": False,

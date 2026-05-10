@@ -13,12 +13,12 @@ from collections import deque
 
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-from Infer_Comm.src.cache.cache_utils import CustomCacheConfig, CustomCache
-from Infer_Comm.evaluation.compression_ratio.nvcomp_wrapper import NVCompWrapper, CompressedTensor, PackedData, TensorData, to_device
+from offline_search.src.cache.cache_utils import CustomCacheConfig, CustomCache
+from offline_search.evaluation.compression_ratio.nvcomp_wrapper import NVCompWrapper, CompressedTensor, PackedData, TensorData, to_device
 
 # 硬编码路径 (参考自 custom_cr.py)
-BASE_MODEL_PATH = "/root/workspace/models"
-BASE_CONFIG_PATH = "/root/workspace/Infer_Comm/duo_config"
+BASE_MODEL_PATH = "/root/data/models"
+BASE_CONFIG_PATH = "/root/workspaces/KVServe_opensourced/kvserve_v1/offline_search/duo_config"
 
 class CompressionEvaluator:
     def __init__(self, model_name="Qwen2.5-7B-Instruct", task="2wikimqa", device="cuda"):
@@ -44,7 +44,7 @@ class CompressionEvaluator:
         max_length_idx = dataset['length'].idxmax()
         text = dataset.loc[max_length_idx, "context"]        
         self.inputs = tokenizer(text, return_tensors="pt").to(device)
-                
+
         # 3. 加载模型
         self.model_config = AutoConfig.from_pretrained(f"{BASE_MODEL_PATH}/{model_name}")
         self.model = AutoModelForCausalLM.from_pretrained(
@@ -75,7 +75,7 @@ class CompressionEvaluator:
         original_key_tensors = [torch.empty(original_kv_shape, dtype=self.model_config.torch_dtype, device=self.device) for _ in range(num_layers)]
         original_value_tensors = [torch.empty(original_kv_shape, dtype=self.model_config.torch_dtype, device=self.device) for _ in range(num_layers)]
         
-        original_size_mb = (len(pickle.dumps(original_key_tensors)) + len(pickle.dumps(original_value_tensors))) / 1024 / 1024
+        original_size_mb = len(original_key_tensors) * original_key_tensors[0].numel() * original_key_tensors[0].element_size() * 2 / 1024 / 1024
         del original_key_tensors, original_value_tensors
 
         # 1. 设置 Cache Config
@@ -94,9 +94,9 @@ class CompressionEvaluator:
         
         # 2. 执行推理 (Pre-fill only)
         with torch.no_grad():
-            outputs = self.model(
+            outputs = self.model.generate(
                 **self.inputs,
-                # max_new_tokens=1,
+                max_new_tokens=1,
                 return_dict_in_generate=True,
                 past_key_values=past_key_values,
             )
@@ -151,14 +151,14 @@ class CompressionEvaluator:
         # 压缩与打包
         meta_data = to_device(meta_data, self.device)
         compressed_data = nvcomp_wrapper.compress(to_compressed_key_tensors, to_compressed_value_tensors)
-        packed_data = PackedData(compressed_data, meta_data)
+        # packed_data = PackedData(compressed_data, meta_data)
         
-        compressed_size_mb = len(pickle.dumps(packed_data)) / 1024 / 1024
+        compressed_size_mb = (compressed_data.buffer.numel() * compressed_data.buffer.element_size() + len(meta_data) * len(meta_data[0]) * meta_data[0][0].numel() * meta_data[0][0].element_size()) / 1024 / 1024
         compression_ratio = original_size_mb / compressed_size_mb
         print(f"original size: {original_size_mb}MB, compressed size: {compressed_size_mb}MB")
                 
         # 清理本次推理产生的资源
-        del outputs, past_key_values, to_compressed_key_tensors, to_compressed_value_tensors, packed_data, compressed_data, meta_data, nvcomp_wrapper
+        del outputs, past_key_values, to_compressed_key_tensors, to_compressed_value_tensors, compressed_data, meta_data, nvcomp_wrapper
         gc.collect()
         torch.cuda.empty_cache()
             
@@ -166,16 +166,17 @@ class CompressionEvaluator:
 
 # params = {
 #     "transform_type": "hadamard",
-#     "heads_selection": 0.9,
-#     "high_key_max_value": 16,
-#     "high_value_max_value": 12,
-#     "low_key_max_value": 8,
+#     "heads_selection": 0.8,
+#     "high_key_max_value": 12,
+#     "high_value_max_value": 8,
+#     "low_key_max_value": 6,
 #     "low_value_max_value": 4,
 #     "axis_key": [2],
 #     "axis_value": [1, 3],
 # }
-# cr_evaluator = CompressionEvaluator(model_name="Qwen2.5-7B-Instruct", task="hotpotqa")
+# cr_evaluator = CompressionEvaluator(model_name="Qwen2.5-32B-Instruct", task="2wikimqa")
 # cr_val = cr_evaluator.evaluate(params)
+# print(f"Compression ratio: {cr_val}")
 # import json
 # with open('config3.json', 'w', encoding='utf-8') as f:
 #     json.dump({

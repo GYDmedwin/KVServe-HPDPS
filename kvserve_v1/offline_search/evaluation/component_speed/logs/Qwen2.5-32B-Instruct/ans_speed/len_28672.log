@@ -1,17 +1,0 @@
-Loading model and tokenizer...
-Loading checkpoint shards:   0%|          | 0/17 [00:00<?, ?it/s]Loading checkpoint shards:   6%|▌         | 1/17 [00:00<00:11,  1.40it/s]Loading checkpoint shards:  12%|█▏        | 2/17 [00:01<00:10,  1.40it/s]Loading checkpoint shards:  18%|█▊        | 3/17 [00:02<00:10,  1.39it/s]Loading checkpoint shards:  24%|██▎       | 4/17 [00:02<00:09,  1.39it/s]Loading checkpoint shards:  29%|██▉       | 5/17 [00:03<00:08,  1.41it/s]Loading checkpoint shards:  35%|███▌      | 6/17 [00:04<00:07,  1.43it/s]Loading checkpoint shards:  41%|████      | 7/17 [00:04<00:06,  1.44it/s]Loading checkpoint shards:  47%|████▋     | 8/17 [00:05<00:06,  1.44it/s]Loading checkpoint shards:  53%|█████▎    | 9/17 [00:06<00:05,  1.47it/s]Loading checkpoint shards:  59%|█████▉    | 10/17 [00:06<00:04,  1.48it/s]Loading checkpoint shards:  65%|██████▍   | 11/17 [00:07<00:04,  1.50it/s]Loading checkpoint shards:  71%|███████   | 12/17 [00:08<00:03,  1.51it/s]Loading checkpoint shards:  76%|███████▋  | 13/17 [00:08<00:02,  1.52it/s]Loading checkpoint shards:  82%|████████▏ | 14/17 [00:09<00:01,  1.52it/s]Loading checkpoint shards:  88%|████████▊ | 15/17 [00:10<00:01,  1.53it/s]Loading checkpoint shards:  94%|█████████▍| 16/17 [00:10<00:00,  1.53it/s]Loading checkpoint shards: 100%|██████████| 17/17 [00:11<00:00,  1.64it/s]Loading checkpoint shards: 100%|██████████| 17/17 [00:11<00:00,  1.50it/s]
-Got past_key_values for 64 layers.
-Preparing quantization and nvcomp inputs...
-Data prepared. Keys shape: torch.Size([64, 8, 28672, 128]), Values shape: torch.Size([64, 8, 28672, 128]), Dtype: torch.uint8
-Warming up for 100 iterations...
-Benchmarking for 200 iterations...
-
---- Benchmark Results ---
-Input length: 28672
-Original size: 3.5000 GB
-Prefill time: 0.0173 s
-Decode time: 0.0140 s
-Prefill throughput: 202.50 GB/s
-Decode throughput: 250.51 GB/s
--------------------------
-

@@ -1,16 +1,0 @@
-Loading model and tokenizer...
-Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:00<00:01,  1.51it/s]Loading checkpoint shards:  50%|█████     | 2/4 [00:01<00:01,  1.59it/s]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:01<00:00,  1.64it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:02<00:00,  1.74it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:02<00:00,  1.68it/s]
-Got past_key_values for 28 layers.
-Preparing quantization inputs...
-Warming up for 100 iterations...
-Benchmarking for 200 iterations...
-
---- Benchmark Results ---
-Input length: 24576
-Original size: 1.3125 GB
-Prefill time: 0.0176 s
-Decode time: 0.0081 s
-Prefill throughput: 74.54 GB/s
-Decode throughput: 162.79 GB/s
--------------------------
-

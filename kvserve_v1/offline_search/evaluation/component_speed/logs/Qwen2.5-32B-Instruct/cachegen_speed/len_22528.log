@@ -1,18 +1,0 @@
-Using the latest cached version of the dataset since Xnhyacinth/LongBench couldn't be found on the Hugging Face Hub
-Found the latest cached dataset configuration '2wikimqa' at /root/.cache/huggingface/datasets/Xnhyacinth___long_bench/2wikimqa/0.0.0/2e9ade51ebf45d98942056c0716234f9d5d257d5 (last modified on Tue Dec 23 11:58:16 2025).
-Loading model and tokenizer...
-Loading checkpoint shards:   0%|          | 0/17 [00:00<?, ?it/s]Loading checkpoint shards:   6%|▌         | 1/17 [00:00<00:11,  1.43it/s]Loading checkpoint shards:  12%|█▏        | 2/17 [00:01<00:10,  1.43it/s]Loading checkpoint shards:  18%|█▊        | 3/17 [00:02<00:09,  1.43it/s]Loading checkpoint shards:  24%|██▎       | 4/17 [00:02<00:09,  1.43it/s]Loading checkpoint shards:  29%|██▉       | 5/17 [00:03<00:08,  1.46it/s]Loading checkpoint shards:  35%|███▌      | 6/17 [00:04<00:07,  1.47it/s]Loading checkpoint shards:  41%|████      | 7/17 [00:04<00:06,  1.48it/s]Loading checkpoint shards:  47%|████▋     | 8/17 [00:05<00:06,  1.48it/s]Loading checkpoint shards:  53%|█████▎    | 9/17 [00:06<00:05,  1.51it/s]Loading checkpoint shards:  59%|█████▉    | 10/17 [00:06<00:04,  1.53it/s]Loading checkpoint shards:  65%|██████▍   | 11/17 [00:07<00:03,  1.54it/s]Loading checkpoint shards:  71%|███████   | 12/17 [00:08<00:03,  1.55it/s]Loading checkpoint shards:  76%|███████▋  | 13/17 [00:08<00:02,  1.56it/s]Loading checkpoint shards:  82%|████████▏ | 14/17 [00:09<00:01,  1.57it/s]Loading checkpoint shards:  88%|████████▊ | 15/17 [00:09<00:01,  1.57it/s]Loading checkpoint shards:  94%|█████████▍| 16/17 [00:10<00:00,  1.57it/s]Loading checkpoint shards: 100%|██████████| 17/17 [00:11<00:00,  1.68it/s]Loading checkpoint shards: 100%|██████████| 17/17 [00:11<00:00,  1.54it/s]
-Performing a forward pass to get past_key_values...
-Got past_key_values for 64 layers.
-Warming up for 100 iterations...
-Benchmarking for 200 iterations...
-
---- Benchmark Results ---
-Input length: 22528
-Original size: 5.5000 GB
-Prefill time: 0.0591 s
-Decode time: 0.0309 s
-Prefill throughput: 93.12 GB/s
-Decode throughput: 178.07 GB/s
--------------------------
-

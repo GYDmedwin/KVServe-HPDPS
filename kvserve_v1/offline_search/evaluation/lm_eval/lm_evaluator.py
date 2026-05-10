@@ -16,22 +16,12 @@ import lm_eval.api.task
 import lm_eval.models
 from lm_eval.caching.cache import delete_cache
 from lm_eval.evaluator_utils import (
-    consolidate_group_results,
-    consolidate_results,
-    get_sample_size,
-    get_subtask_list,
-    get_task_list,
-    prepare_print_tasks,
-    print_writeout,
     run_task_tests,
 )
 from lm_eval.loggers import EvaluationTracker
 from lm_eval.loggers.utils import add_env_info, add_tokenizer_info, get_git_commit_hash
 from lm_eval.tasks import TaskManager, get_task_dict
 from lm_eval.utils import (
-    handle_non_serializable,
-    hash_dict_images,
-    hash_string,
     positional_deprecated,
     setup_logging,
     simple_parse_args_string,

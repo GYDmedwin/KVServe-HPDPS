@@ -9,13 +9,13 @@ from lm_eval.models.utils_hf import get_dtype, stop_sequences_criteria
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-from Infer_Comm.src.cache.cache_utils import CustomCacheConfig, CustomCache
-from Infer_Comm.src.cache.kivi_utils import KIVICacheConfig, KIVICache
-from Infer_Comm.src.cache.cachegen_utils import CacheGenCacheConfig, CacheGenCache
-from Infer_Comm.src.cache.duoattn_utils import DuoAttentionCacheConfig, DuoAttentionCache
+from offline_search.src.cache.cache_utils import CustomCacheConfig, CustomCache
+from offline_search.src.cache.kivi_utils import KIVICacheConfig, KIVICache
+from offline_search.src.cache.cachegen_utils import CacheGenCacheConfig, CacheGenCache
+from offline_search.src.cache.duoattn_utils import DuoAttentionCacheConfig, DuoAttentionCache
 
-from Infer_Comm.src.models.modeling_llama import enable_custom_llama_attention
-from Infer_Comm.src.models.modeling_qwen import enable_custom_qwen2_attention
+from offline_search.src.models.modeling_llama import enable_custom_llama_attention
+from offline_search.src.models.modeling_qwen import enable_custom_qwen2_attention
 
 # 使用 @register_model 装饰器将模型注册到 lm_eval
 @register_model("my_custom_model")
@@ -74,7 +74,7 @@ class CustomLMEval(HFLM):
 
         match self.cache_type:
             case "custom":
-                # Custom KV Cache from Infer_Comm
+                # Custom KV Cache from offline_search
                 scores = kwargs.pop("scores", None)
                 assert scores is not None, "Models scores must be provided, check your config."
 
