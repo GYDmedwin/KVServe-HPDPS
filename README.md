@@ -9,20 +9,20 @@
 
 **Service-aware KV-cache compression for bandwidth-efficient disaggregated LLM serving.**
 
-KVServe is a **vLLM V1 KV connector extension** that reduces KV-cache traffic in disaggregated prefill/decode serving. It plugs into vLLM without forking the runtime, keeps scheduling and KV block management inside vLLM, and only handles KV transfer plus optional compression.
+KVServe is a **vLLM KV connector extension** that reduces KV-cache traffic in disaggregated prefill/decode serving. It plugs into vLLM without forking the runtime, keeps scheduling and KV block management inside vLLM, and only handles KV transfer plus optional compression.
 
 KVServe is built around a modular KV compression abstraction:
 
 ```text
-Raw KV Cache  →  Transform  →  Quantizer  →  Codec  →  Compressed KV Payload
+Raw KV Cache  →  Transform  →  Quantizer  →  Codec  →  Compressed KV
 ```
 
 This makes KV compression configurable, extensible, and service-aware: KVServe can choose different compression profiles based on bandwidth, SLO, and quality budget, and can bypass compression when it is not beneficial.
 
 ```text
-KV COMPRESSION          █████████  9x
-PD COMM TIME            ████████   8x lower
-END-TO-END LATENCY      ███████▌   7.5x lower
+KV COMPRESSION          █████████  up to 10x
+PD COMM TIME            ████████   9x lower
+END-TO-END LATENCY      ███████▌   8.5x lower
 ACCURACY                █████████  preserved
 ```
 
@@ -92,16 +92,38 @@ kv_port + tp_rank
 
 `transfer_id` is the stable wire key for one logical request. In production, it should be generated once by the router or request admission layer, then passed to both prefill and decode through `SamplingParams.extra_args`. The connector cannot safely invent matching IDs independently on two different engines.
 
-## Configure Your Own Compression Components
+## Choose a Compression Mode
 
-KVServe compression is configured as an ordered pipeline. The connector still
-receives vLLM-managed KV blocks; the pipeline only transforms the extracted KV
-payload before transport.
+KVServe supports three compression modes. The recommended path is controller
+mode: the online selector chooses the **optimal compression profile** for the current
+bandwidth, SLO, and quality budget. 
 
-### Build a Compression Pipeline
+For quick experiments, use the built-in
+**default mode**. For research or deployment-specific tuning, pass a custom
+pipeline.
 
-Use `kv_connector_extra_config["compression"]` to pass either `None`,
-`"default"`, or a custom pipeline dict:
+```python
+kv_connector_extra_config={"compression": "default"}
+```
+
+**Controller mode** uses a profile library:
+
+```python
+kv_connector_extra_config={
+    "compression": {
+        "mode": "controller",
+        "library_path": "/path/to/profiles.json",
+        "service_config": {
+            "slo_ms": 200.0,
+            "accuracy_requirement": 0.92,
+        },
+    }
+}
+```
+
+**Custom mode** directly defines the ordered compression pipeline. The connector
+still receives vLLM-managed KV blocks; the pipeline only transforms the
+extracted KV payload before transport.
 
 ```python
 kv_connector_extra_config={
@@ -129,7 +151,7 @@ kv_connector_extra_config={
 }
 ```
 
-Add a transform stage when needed:
+Add a transform stage when your profile needs one:
 
 ```python
 "compression": {
@@ -141,13 +163,13 @@ Add a transform stage when needed:
 }
 ```
 
-The built-in stages are:
+Built-in stages:
 
 - `transformer`: `KVServeTransformer`, currently Hadamard transform.
 - `quantizer`: `KVServeQuantizer`, hybrid head/layer precision quantization.
 - `codec`: `KVServeCodec`, currently nvCOMP-backed lossless payload coding.
 
-### Add a Compression Component
+### Build Your Own Compression Component
 
 KVServe allows new transformer, quantizer, or codec implementations without
 touching vLLM scheduling or KV block allocation. Custom components should follow
@@ -194,7 +216,6 @@ python tests/test_kvserve.py --mode controller --model /path/to/model \
 ## Notes
 
 - KVServe expects the PD orchestration layer to attach a stable `transfer_id` to each logical request. This is handled by the KVServe test; external integrations should do the same in their router or request admission layer.
-- The current connector validates the standard two-engine PD path with one producer and one consumer instance.
 - Homogeneous TP is supported when prefill and decode use the same TP size.
 - The ZMQ/NCCL control plane should run on trusted network interfaces only.
 
