@@ -440,7 +440,7 @@ class CustomCache(DynamicCache):
         import sys
         import os
         sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-        from Infer_Comm.evaluation.compression_ratio.nvcomp_wrapper import NVCompWrapper, PackedData, to_device
+        from offline_search.evaluation.compression_ratio.nvcomp_wrapper import NVCompWrapper, PackedData, to_device
 
         num_layers = len(self._low_quantized_key_cache)
         if num_layers == 0:

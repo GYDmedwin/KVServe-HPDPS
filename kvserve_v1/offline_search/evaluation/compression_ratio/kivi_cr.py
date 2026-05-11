@@ -11,7 +11,7 @@ from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-from Infer_Comm.src.cache.kivi_utils import KIVICacheConfig, KIVICache
+from offline_search.src.cache.kivi_utils import KIVICacheConfig, KIVICache
 from nvcomp_wrapper import CompressedTensor, PackedData, TensorData, to_device
 
 

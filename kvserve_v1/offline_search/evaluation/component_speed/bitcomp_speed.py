@@ -16,7 +16,7 @@ import argparse
 # Add path for nvcomp_wrapper
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 try:
-    from Infer_Comm.evaluation.compression_ratio.nvcomp_wrapper import NVCompWrapper
+    from offline_search.evaluation.compression_ratio.nvcomp_wrapper import NVCompWrapper
 except ImportError:
     # Fallback if the path resolution fails or dependency missing, though user says it exists
     print("Error importing nvcomp_wrapper. Please ensure the path is correct.")

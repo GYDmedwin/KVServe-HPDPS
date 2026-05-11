@@ -42,7 +42,9 @@ Recommended environment:
 
 - `transformers==4.50.0`
 - `lm-eval`, used by `acc_evaluator.py` for accuracy evaluation
+- `numpy`, `pandas`, `scipy`, `scikit-learn`, and `datasets`
 - PyTorch with CUDA support
+- `cupy` and NVIDIA `nvcomp` for the current compression-ratio path
 - Access to the target model checkpoints under `BASE_MODEL_PATH`
 - Score CSV files under `BASE_CONFIG_PATH`
 

@@ -18,10 +18,10 @@ import argparse
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 
 try:
-    from Infer_Comm.src.cache.cache_utils import HadamardTransform
+    from offline_search.src.cache.cache_utils import HadamardTransform
 except ImportError:
     # Fallback just in case
-    print("Could not import HadamardTransform from Infer_Comm.src.cache.cache_utils. Checking path...")
+    print("Could not import HadamardTransform from offline_search.src.cache.cache_utils. Checking path...")
     print(sys.path)
     raise
 

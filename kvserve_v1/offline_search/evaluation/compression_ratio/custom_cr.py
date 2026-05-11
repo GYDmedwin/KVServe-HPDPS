@@ -11,7 +11,7 @@ from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-from Infer_Comm.src.cache.cache_utils import CustomCacheConfig, CustomCache
+from offline_search.src.cache.cache_utils import CustomCacheConfig, CustomCache
 from nvcomp_wrapper import NVCompWrapper, CompressedTensor, PackedData, TensorData, to_device
 from cachegen_wrapper import CacheGenWrapper
 
