@@ -1,0 +1,26 @@
+cache_type,config,gsm8k_cot_llama,humaneval_instruct,longbench_2wikimqa,longbench_gov_report,longbench_hotpotqa,longbench_multi_news,longbench_multifieldqa_en,longbench_qasper
+default,,84.91/1.00,66.46/1.00,49.97/1.00,34.20/1.00,58.14/1.00,26.87/1.00,56.43/1.00,45.66/1.00
+cachegen,"Quant Level: 1, High/Mid/Low: 32 / 16 / 12",82.71/7.81,65.24/5.90,47.71/8.49,,57.50/8.57,26.23/8.11,55.67/8.49,42.79/8.52
+cachegen,"Quant Level: 2, High/Mid/Low: 32 / 16 / 12",83.47/5.85,62.80/3.98,50.59/6.66,,57.75/6.77,26.08/6.20,55.88/6.65,44.46/6.65
+kivi,"N-bits: 2, Q Group Size: 32, Residual Length: 128; Axis Key: 2, Axis Value: 3",81.35/4.32,60.37/2.61,48.93/4.97,33.79/5.08,57.41/5.17,26.44/4.45,55.46/4.97,44.97/4.89
+duoattn,"Heads Selection: 0.7, Sink Size: 128, Recent Size: 256",84.53/1.88,66.46/1.05,50.86/2.89,28.62/2.98,57.61/3.08,24.32/2.30,57.85/2.85,44.77/2.79
+duoattn,"Heads Selection: 0.8, Sink Size: 128, Recent Size: 256",83.93/2.16,65.24/1.06,51.03/3.99,26.89/4.20,57.10/4.42,23.41/2.89,56.94/3.92,43.90/3.77
+custom_llama_none,"TF: none; HS: 0.1, KV Config: high_k=16, high_v=16, low_k=8, low_v=8; Axis Key: 2, Axis Value: 1 3",84.61/4.76,,,,,,,
+custom_llama_none,"TF: none; HS: 0.1, KV Config: high_k=8, high_v=10, low_k=4, low_v=6; Axis Key: 2, Axis Value: 1 3",,65.24/5.46,,,,,,
+custom_llama_none,"TF: none; HS: 0.1, KV Config: high_k=8, high_v=16, low_k=8, low_v=4; Axis Key: 2, Axis Value: 1 3",,67.07/4.89,,,,,,
+custom_llama_none,"TF: none; HS: 0.2, KV Config: high_k=10, high_v=6, low_k=8, low_v=6; Axis Key: 2, Axis Value: 1 3",81.12/6.84,,,,,,,
+custom_llama_none,"TF: none; HS: 0.2, KV Config: high_k=8, high_v=16, low_k=6, low_v=6; Axis Key: 2, Axis Value: 1 3",,67.07/4.95,,,,,,
+custom_llama_none,"TF: none; HS: 0.7, KV Config: high_k=10, high_v=6, low_k=4, low_v=6; Axis Key: 2, Axis Value: 1 3",,,,,,26.74/8.85,,
+custom_llama_none,"TF: none; HS: 0.8, KV Config: high_k=10, high_v=10, low_k=4, low_v=6; Axis Key: 2, Axis Value: 1 3",,,,,,27.49/8.82,,
+custom_llama_none,"TF: none; HS: 0.9, KV Config: high_k=12, high_v=12, low_k=8, low_v=6; Axis Key: 2, Axis Value: 1 3",,,48.91/7.61,,57.21/7.72,,55.79/7.60,45.62/7.60
+custom_llama_none,"TF: none; HS: 0.9, KV Config: high_k=6, high_v=12, low_k=4, low_v=8; Axis Key: 2, Axis Value: 1 3",,,,,,26.99/8.72,,
+custom_llama_hadamard,"TF: hadamard; HS: 0.1, KV Config: high_k=10, high_v=6, low_k=8, low_v=3; Axis Key: 2, Axis Value: 1 3",82.18/7.01,,,,,,,
+custom_llama_hadamard,"TF: hadamard; HS: 0.1, KV Config: high_k=6, high_v=8, low_k=6, low_v=3; Axis Key: 2, Axis Value: 1 3",,66.46/6.23,,,,,,
+custom_llama_hadamard,"TF: hadamard; HS: 0.2, KV Config: high_k=6, high_v=8, low_k=6, low_v=4; Axis Key: 2, Axis Value: 1 3",,68.90/6.25,,,,,,
+custom_llama_hadamard,"TF: hadamard; HS: 0.3, KV Config: high_k=8, high_v=6, low_k=8, low_v=6; Axis Key: 2, Axis Value: 1 3",81.80/7.31,,,,,,,
+custom_llama_hadamard,"TF: hadamard; HS: 0.4, KV Config: high_k=12, high_v=5, low_k=6, low_v=4; Axis Key: 2, Axis Value: 1 3",,64.63/6.14,,,,,,
+custom_llama_hadamard,"TF: hadamard; HS: 0.7, KV Config: high_k=10, high_v=6, low_k=8, low_v=4; Axis Key: 2, Axis Value: 1 3",82.41/7.73,,,,,,,
+custom_llama_hadamard,"TF: hadamard; HS: 0.7, KV Config: high_k=10, high_v=8, low_k=4, low_v=3; Axis Key: 2, Axis Value: 1 3",,,,,,26.12/10.62,,
+custom_llama_hadamard,"TF: hadamard; HS: 0.8, KV Config: high_k=12, high_v=8, low_k=6, low_v=4; Axis Key: 2, Axis Value: 1 3",,,49.02/9.13,,58.63/9.31,,55.94/9.10,46.09/9.05
+custom_llama_hadamard,"TF: hadamard; HS: 0.9, KV Config: high_k=10, high_v=10, low_k=4, low_v=4; Axis Key: 2, Axis Value: 1 3",,,,,,26.82/10.74,,
+custom_llama_hadamard,"TF: hadamard; HS: 0.9, KV Config: high_k=12, high_v=8, low_k=4, low_v=4; Axis Key: 2, Axis Value: 1 3",,,,,,26.53/10.77,,
