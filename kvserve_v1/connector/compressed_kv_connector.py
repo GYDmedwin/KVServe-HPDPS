@@ -9,7 +9,7 @@ Key design decisions (learned from conversation log):
 - start_load_kv proactively drains transport; WORKER has its own _worker_received_kv.
 - NCCL recv is only called on-demand (after ZMQ signal) — safe for CUDA graph capture.
 - build_connector_meta must not drop pending decode loads across steps.
-- Compression: EasyDist-packed uint8 tensor sent as a single NCCL payload.
+- Compression: GPU-resident CompressedWire bundles sent through NCCL.
   Compressed messages are identified by a "__compressed__" sentinel in layer_names.
 """
 
@@ -28,8 +28,9 @@ from vllm.logger import init_logger
 from vllm.v1.core.sched.output import SchedulerOutput
 
 from kvserve_v1.compression.manager import (
-    add_sentinel, is_compressed_layer_names, pack_compressed,
-    strip_sentinel, unpack_compressed)
+    add_sentinel, is_compressed_layer_names, strip_sentinel)
+from kvserve_v1.compression.wire import (
+    CompressedWire, build_wire, restore_from_wire)
 from kvserve_v1.utils.kv_utils import (
     extract_kv_from_layer_by_blocks, inject_kv_into_layer_by_blocks,
     make_slot_mapping)
@@ -45,6 +46,7 @@ if TYPE_CHECKING:
 logger = init_logger(__name__)
 
 _LOAD_TIMEOUT_S = 60.0
+_DEFAULT_MAX_NCCL_CHUNK_BYTES = 512 * 1024 * 1024
 
 
 def _sorted_rids(rids: list[str] | set[str]) -> list[str]:
@@ -73,6 +75,25 @@ def _write_compression_stats(
         logger.warning_once(
             "[Connector] Failed to write compression stats to %s: %s",
             stats_path, e)
+
+
+def _max_nccl_chunk_bytes() -> int:
+    raw = os.environ.get("KVSERVE_MAX_NCCL_CHUNK_BYTES")
+    if not raw:
+        return _DEFAULT_MAX_NCCL_CHUNK_BYTES
+    try:
+        value = int(raw)
+    except ValueError:
+        logger.warning_once(
+            "Invalid KVSERVE_MAX_NCCL_CHUNK_BYTES=%r; using default %d",
+            raw, _DEFAULT_MAX_NCCL_CHUNK_BYTES)
+        return _DEFAULT_MAX_NCCL_CHUNK_BYTES
+    if value <= 0:
+        logger.warning_once(
+            "KVSERVE_MAX_NCCL_CHUNK_BYTES must be positive; using default %d",
+            _DEFAULT_MAX_NCCL_CHUNK_BYTES)
+        return _DEFAULT_MAX_NCCL_CHUNK_BYTES
+    return value
 
 
 @dataclass
@@ -129,7 +150,7 @@ class CompressedKVConnector(KVConnectorBase_V1):
 
         # WORKER side: received buffers keyed by transfer_id.
         self._worker_received_kv: dict[
-            str, deque[tuple[list[str], torch.Tensor]]
+            str, deque[tuple[list[str], Any]]
         ] = defaultdict(deque)
 
         # WORKER side: producer accumulates per-layer KV before sending
@@ -246,12 +267,29 @@ class CompressedKVConnector(KVConnectorBase_V1):
             if not self._worker_received_kv[transfer_id]:
                 self._worker_received_kv.pop(transfer_id, None)
 
+            # Consumer-side failure marker (OOM, pre-INIT, etc.).
+            if payload is None:
+                logger.error(
+                    "[Connector][RID][RECV] transport reported failure for "
+                    "rid=%s transfer_id=%s; skipping injection", rid,
+                    transfer_id)
+                continue
+
             # Decompress if needed
             if is_compressed_layer_names(layer_names):
                 layer_names = strip_sentinel(layer_names)
                 compressor = self._get_compressor()
                 if compressor is not None:
-                    compressed = unpack_compressed(payload, rid)
+                    if not isinstance(payload, dict) or not payload.get("__bundle__"):
+                        logger.error(
+                            "[Connector] Invalid compressed payload for %s", rid)
+                        continue
+                    wire = CompressedWire(
+                        meta=payload["meta"],
+                        body_chunks=payload["body_chunks"],
+                        aux_tensors=payload["aux_tensors"],
+                    )
+                    compressed = restore_from_wire(wire)
                     stacked_kv = compressor.decompress(compressed)
                     if stacked_kv is None:
                         logger.error(
@@ -333,19 +371,22 @@ class CompressedKVConnector(KVConnectorBase_V1):
                 t0 = time.monotonic()
                 compressed = compressor.compress(stacked, rid)
                 if compressed is not None:
-                    payload = pack_compressed(compressed)
+                    wire = build_wire(compressed, _max_nccl_chunk_bytes())
                     send_names = add_sentinel(layer_names)
                     logger.info(
                         "[Connector][RID][SEND] sending compressed rid=%s transfer_id=%s "
-                        "layers=%d payload_shape=%s",
-                        rid, transfer_id, len(layer_names), list(payload.shape),
+                        "layers=%d body_chunks=%d aux_tensors=%d payload_bytes=%d",
+                        rid, transfer_id, len(layer_names), len(wire.body_chunks),
+                        len(wire.aux_tensors), wire.nbytes,
                     )
-                    self._transport.send(transfer_id, send_names, payload)
+                    self._transport.send_bundle(
+                        transfer_id, send_names, wire.meta, wire.body_chunks,
+                        wire.aux_tensors)
                     _write_compression_stats(
                         request_id=rid,
                         transfer_id=transfer_id,
                         original_bytes=stacked.numel() * stacked.element_size(),
-                        compressed_bytes=payload.numel() * payload.element_size(),
+                        compressed_bytes=wire.nbytes,
                     )
                     elapsed_ms = (time.monotonic() - t0) * 1e3
                     compressor.update_controller(rid, elapsed_ms)
@@ -354,7 +395,7 @@ class CompressedKVConnector(KVConnectorBase_V1):
                         "(%d layers, %.2f MB → %.2f MB)",
                         rid, len(layer_names),
                         stacked.numel() * stacked.element_size() / 1e6,
-                        payload.numel() * payload.element_size() / 1e6)
+                        wire.nbytes / 1e6)
                     continue
                 logger.warning(
                     "[Connector] Compression returned None for %s, "

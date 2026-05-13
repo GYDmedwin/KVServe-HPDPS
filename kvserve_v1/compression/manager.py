@@ -13,9 +13,8 @@ Three compression modes (set via kv_connector_extra_config["compression"]):
   {"mode": "controller", "library_path": "...", "service_config": {...}} –
                online adaptive selection via OnlineController + ProfileLibrary
 
-Transport packing uses pickle to fold CompressedKVData into a single GPU uint8
-tensor for NCCL transfer; mixed-dtype tensors (uint8 compressed bytes + float32
-quantization scales) are preserved exactly.
+Transport packing is handled by compression.wire, which keeps compressed data
+and quantization tensors GPU-resident for NCCL transfer.
 """
 
 from __future__ import annotations
@@ -45,75 +44,6 @@ def strip_sentinel(layer_names: list[str]) -> list[str]:
 
 def add_sentinel(layer_names: list[str]) -> list[str]:
     return [_COMPRESSED_SENTINEL] + layer_names
-
-
-def _tensors_to_cpu(obj: Any) -> Any:
-    """Recursively move all tensors in a nested structure to CPU."""
-    if isinstance(obj, torch.Tensor):
-        return obj.cpu()
-    if isinstance(obj, dict):
-        return {k: _tensors_to_cpu(v) for k, v in obj.items()}
-    if isinstance(obj, list):
-        return [_tensors_to_cpu(x) for x in obj]
-    return obj
-
-
-def _tensors_to_device(obj: Any, device: str) -> Any:
-    """Recursively move all tensors in a nested structure to the given device."""
-    if isinstance(obj, torch.Tensor):
-        return obj.to(device)
-    if isinstance(obj, dict):
-        return {k: _tensors_to_device(v, device) for k, v in obj.items()}
-    if isinstance(obj, list):
-        return [_tensors_to_device(x, device) for x in obj]
-    return obj
-
-
-def pack_compressed(compressed: "CompressedKVData") -> torch.Tensor:
-    """Serialize CompressedKVData into a GPU uint8 tensor for NCCL transfer.
-
-    Uses pickle so that mixed-dtype tensors (uint8 compressed bytes + float32/bfloat16
-    quantization scale factors) are preserved exactly — EasyDist would corrupt them by
-    assuming all tensors share a single dtype.
-    """
-    import pickle
-
-    if compressed.is_chunked:
-        obj = {
-            "is_chunked": True,
-            "chunks": _tensors_to_cpu(compressed.chunks),
-            "chunk_metadata": _tensors_to_cpu(compressed.chunk_metadata),
-            "metadata": _tensors_to_cpu(compressed.metadata),
-        }
-    else:
-        obj = {
-            "is_chunked": False,
-            "compressed_tensor": _tensors_to_cpu(compressed.compressed_tensor),
-            "metadata": _tensors_to_cpu(compressed.metadata),
-        }
-
-    data = pickle.dumps(obj, protocol=4)
-    buf = torch.frombuffer(bytearray(data), dtype=torch.uint8)
-    return buf.to("cuda")
-
-
-def unpack_compressed(super_tensor: torch.Tensor, request_id: str) -> "CompressedKVData":
-    """Deserialize a GPU uint8 tensor back into CompressedKVData."""
-    import pickle
-    from kvserve_v1.compression.compression_manager import CompressedKVData
-
-    data = bytes(super_tensor.cpu().numpy())
-    obj = pickle.loads(data)
-    is_chunked = obj.get("is_chunked", False)
-    return CompressedKVData(
-        request_id=request_id,
-        layer_id=-1,
-        is_chunked=is_chunked,
-        chunks=_tensors_to_device(obj.get("chunks"), "cuda") if is_chunked else None,
-        chunk_metadata=_tensors_to_device(obj.get("chunk_metadata"), "cuda") if is_chunked else None,
-        compressed_tensor=_tensors_to_device(obj.get("compressed_tensor"), "cuda") if not is_chunked else None,
-        metadata=_tensors_to_device(obj.get("metadata"), "cuda"),
-    )
 
 
 def _cfg_cache_key(cfg_dict: dict) -> str:
