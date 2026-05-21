@@ -213,6 +213,19 @@ python tests/test_kvserve.py --mode controller --model /path/to/model \
 
 `--lmeval-task` requires `lm-eval` and a locally available dataset cache unless `--online` is passed.
 
+## Citation
+
+If you find KVServe useful for your research, please consider citing our paper:
+
+```bibtex
+@article{liu2026kvserve,
+  title={KVServe: Service-Aware KV Cache Compression for Communication-Efficient Disaggregated LLM Serving},
+  author={Liu, Zedong and Ma, Xinyang and Luo, Dejun and Zhao, Hairui and Lu, Bing and Huang, Wenjing and Gu, Yida and Liu, Xingchen and Wei, Zheng and Liu, Jinyang and others},
+  journal={arXiv preprint arXiv:2605.13734},
+  year={2026}
+}
+```
+
 ## Notes
 
 - KVServe expects the PD orchestration layer to attach a stable `transfer_id` to each logical request. This is handled by the KVServe test; external integrations should do the same in their router or request admission layer.
