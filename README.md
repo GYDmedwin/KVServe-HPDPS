@@ -11,13 +11,19 @@
 
 KVServe is a **vLLM KV connector extension** that reduces KV-cache traffic in disaggregated prefill/decode serving. It plugs into vLLM without forking the runtime, keeps scheduling and KV block management inside vLLM, and only handles KV transfer plus optional compression.
 
+## 🔥 News
+
+- **[2026-05-13]** KVServe is now on arXiv! Read the paper here: [arXiv:2605.13734](https://arxiv.org/abs/2605.13734). 🚀
+- **[2026-05-12]** KVServe v1 code has been released, with plug-and-play integration with vLLM. ⚡
+- **[2026-05-11]** KVServe has been accepted by **ACM SIGCOMM 2026**! 🎉
+
 KVServe is built around a modular KV compression abstraction:
 
 ```text
 Raw KV Cache  →  Transform  →  Quantizer  →  Codec  →  Compressed KV
 ```
 
-This makes KV compression configurable, extensible, and service-aware: KVServe can choose different compression profiles based on bandwidth, SLO, and quality budget, and can bypass compression when it is not beneficial.
+This makes KV compression **configurable, extensible, and service-aware**: KVServe can choose different compression profiles based on bandwidth, SLO, and quality budget.
 
 ```text
 KV COMPRESSION          █████████  up to 10x
