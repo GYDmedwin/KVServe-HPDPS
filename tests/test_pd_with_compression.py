@@ -480,7 +480,7 @@ def run_decode(model, decode_gpu, kv_port, prefill_done_event, result_queue,
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", default="/data/gyd/models/Qwen2.5-7B-Instruct")
+    parser.add_argument("--model", default="/data/models/Qwen2.5-7B-Instruct")
     parser.add_argument("--prefill-gpu", type=int, default=0)
     parser.add_argument("--decode-gpu", type=int, default=1)
     parser.add_argument("--kv-port", type=int, default=25002)

@@ -6,6 +6,7 @@ Coordinates transformer, quantizer, and codec compression components
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
 import copy
+import time
 import torch
 
 from kvserve_v1.compression.components import Transformer, Quantizer, Codec
@@ -180,7 +181,12 @@ class CompressionManager:
             }
 
             quantization_params_list = []
-            
+
+            # --- timing: per-layer transform+quantize (pipelineable with prefill)
+            if all_layers_data.is_cuda:
+                torch.cuda.synchronize()
+            _t_quant_start = time.monotonic()
+
             # Process first layer to determine output shape and dtype
             first_layer = all_layers_data[0]
             processed_data = first_layer
@@ -246,11 +252,22 @@ class CompressionManager:
             compression_metadata["codec_shape"] = list(processed_buffer.shape)
             compression_metadata["codec_dtype"] = str(processed_buffer.dtype).replace("torch.", "")
 
+            # --- timing: transform+quantize done; start codec (monolithic, all layers)
+            if processed_buffer.is_cuda:
+                torch.cuda.synchronize()
+            t_quant_ms = (time.monotonic() - _t_quant_start) * 1e3
+            _t_codec_start = time.monotonic()
+
             # Codec compression
             compressed_tensor, compression_metadata = self._handle_codec_compression(
                 processed_buffer, compression_metadata, num_layers - 1, request_id
             )
-            
+
+            if compressed_tensor.is_cuda:
+                torch.cuda.synchronize()
+            compression_metadata["t_quant_ms"] = t_quant_ms
+            compression_metadata["t_codec_ms"] = (time.monotonic() - _t_codec_start) * 1e3
+
             # Release large buffer immediately
             del processed_buffer
             
@@ -463,10 +480,14 @@ class CompressionManager:
             
             # Step 1: Codec decompression (all layers together)
             # Returns tensor of shape [layers, 2, heads, blocks, block_size, head_size]
+            _t_codec_start = time.monotonic()
             current_data = self._handle_codec_decompression(
                 compressed_data.compressed_tensor, compressed_data, self.config.pipeline, 0
             )
-            
+            if isinstance(current_data, torch.Tensor) and current_data.is_cuda:
+                torch.cuda.synchronize()
+            _t_codec_decode_ms = (time.monotonic() - _t_codec_start) * 1e3
+
             if not isinstance(current_data, torch.Tensor):
                 log_error(f"[CompressionManager] Expected tensor after codec decode, got {type(current_data)}")
                 return None
@@ -490,6 +511,7 @@ class CompressionManager:
             )
             
             # Step 2 & 3: Dequantize and Transform loop (write directly to buffer)
+            _t_dequant_start = time.monotonic()
             for layer_id in range(num_layers):
                 current_layer_data = current_data[layer_id].permute(0, 2, 3, 1, 4)
                 
@@ -524,9 +546,16 @@ class CompressionManager:
                 # Release intermediates
                 del current_layer_data
 
+            if processed_buffer.is_cuda:
+                torch.cuda.synchronize()
+            self._last_decompress_timing = {
+                "t_codec_decode_ms": _t_codec_decode_ms,
+                "t_dequant_ms": (time.monotonic() - _t_dequant_start) * 1e3,
+            }
+
             # Release codec output buffer
             del current_data
-            
+
             log_info(f"[CompressionManager] Decompression SUCCESS: {num_layers} layers, shape={processed_buffer.shape}")
             return processed_buffer
             

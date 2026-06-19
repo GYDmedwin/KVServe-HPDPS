@@ -24,7 +24,10 @@ torch.cuda.synchronize() during CUDA graph capture is not blocked.
 """
 
 import ctypes
+import json
+import os
 import threading
+import time
 from collections import defaultdict, deque
 from typing import Any, Optional
 
@@ -91,9 +94,20 @@ class NcclTransport:
             self._send_queue_cv = threading.Condition()
             self._send_queue: deque = deque()
             self._send_inflight = 0
+            # Async completion tracking: per transfer_id, how many grouped
+            # layer-messages have FINISHED sending (for the connector's
+            # get_finished). Guarded by _sent_lock.
+            self._sent_lock = threading.Lock()
+            self._sent_layers: dict = defaultdict(int)
             self._send_thread = threading.Thread(
                 target=self._send_loop, daemon=True, name="nccl-send")
             self._send_thread.start()
+
+            # Communication-time instrumentation (sender side). When
+            # KVSERVE_TRANSFER_STATS_PATH is set, every completed NCCL send
+            # appends one JSONL row {request_id, transfer_ms, bytes}.
+            self._transfer_stats_path = os.environ.get(
+                "KVSERVE_TRANSFER_STATS_PATH")
 
         else:
             self._sock = self._ctx.socket(zmq.ROUTER)
@@ -137,8 +151,13 @@ class NcclTransport:
         meta: dict[str, Any],
         body_chunks: list[torch.Tensor],
         aux_tensors: list[torch.Tensor],
+        member_tids: list[str] | None = None,
     ) -> None:
-        """Queue a compressed KV bundle for GPU-resident NCCL transfer."""
+        """Queue a compressed KV bundle for GPU-resident NCCL transfer.
+
+        member_tids: transfer_ids covered by this (grouped) message; on send
+        completion each gets its sent-layer count incremented (for async
+        get_finished). None → no async tracking."""
         assert self.is_sender
         with torch.cuda.device(self.device):
             body = [t.to(self.device).contiguous() for t in body_chunks]
@@ -147,8 +166,18 @@ class NcclTransport:
             ready_event.record(torch.cuda.current_stream(self.device))
         with self._send_queue_cv:
             self._send_queue.append(("bundle", request_id, layer_names, meta,
-                                     body, aux, ready_event))
+                                     body, aux, ready_event, member_tids))
             self._send_queue_cv.notify()
+
+    def sent_layers(self, transfer_id: str) -> int:
+        """How many grouped layer-messages for this transfer_id have completed
+        sending (for the connector's async get_finished)."""
+        with self._sent_lock:
+            return self._sent_layers.get(transfer_id, 0)
+
+    def clear_sent(self, transfer_id: str) -> None:
+        with self._sent_lock:
+            self._sent_layers.pop(transfer_id, None)
 
     def wait_for_sent(self) -> None:
         """Block until all queued and in-flight sends have completed."""
@@ -194,6 +223,7 @@ class NcclTransport:
             logger.error("[NcclTransport] Consumer OOM for %s", request_id)
             return
 
+        t0 = time.monotonic()
         with torch.cuda.stream(self._send_stream):
             self._send_stream.wait_event(ready_event)
             self.nccl.ncclSend(
@@ -205,6 +235,8 @@ class NcclTransport:
                 cudaStream_t(self._send_stream.cuda_stream),
             )
         self._send_stream.synchronize()
+        self._record_transfer(request_id, (time.monotonic() - t0) * 1e3,
+                              tensor.numel() * tensor.element_size())
         logger.debug("[NcclTransport][RID][SEND] sent rid=%s shape=%s",
                      request_id, list(tensor.shape))
 
@@ -216,6 +248,7 @@ class NcclTransport:
         body_chunks: list[torch.Tensor],
         aux_tensors: list[torch.Tensor],
         ready_event: torch.cuda.Event,
+        member_tids: list[str] | None = None,
     ) -> None:
         body_specs = [_tensor_spec(t) for t in body_chunks]
         aux_specs = [_tensor_spec(t) for t in aux_tensors]
@@ -234,14 +267,39 @@ class NcclTransport:
             logger.error("[NcclTransport] Consumer OOM for bundle %s", request_id)
             return
 
+        t0 = time.monotonic()
         with torch.cuda.stream(self._send_stream):
             self._send_stream.wait_event(ready_event)
             for tensor in body_chunks + aux_tensors:
                 self._nccl_send_tensor(tensor)
         self._send_stream.synchronize()
+        if member_tids:  # async: this layer-message is fully sent for each member
+            with self._sent_lock:
+                for tid in member_tids:
+                    self._sent_layers[tid] += 1
+        nbytes = sum(t.numel() * t.element_size()
+                     for t in body_chunks + aux_tensors)
+        self._record_transfer(request_id, (time.monotonic() - t0) * 1e3, nbytes)
         logger.debug(
             "[NcclTransport][RID][SEND] sent bundle rid=%s body=%d aux=%d",
             request_id, len(body_chunks), len(aux_tensors))
+
+    def _record_transfer(self, request_id: str, transfer_ms: float,
+                         nbytes: int) -> None:
+        """Optionally log one per-transfer JSONL row of sender-side NCCL time."""
+        if not self._transfer_stats_path:
+            return
+        try:
+            with open(self._transfer_stats_path, "a") as f:
+                f.write(json.dumps({
+                    "request_id": request_id,
+                    "transfer_ms": transfer_ms,
+                    "bytes": int(nbytes),
+                }, sort_keys=True) + "\n")
+        except OSError as e:
+            logger.warning_once(
+                "[NcclTransport] Failed to write transfer stats to %s: %s",
+                self._transfer_stats_path, e)
 
     def _nccl_send_tensor(self, tensor: torch.Tensor) -> None:
         if tensor.numel() == 0:

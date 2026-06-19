@@ -90,14 +90,30 @@ class KVCompressionAdapter:
         self._manager_cache: dict[str, tuple["CompressionManager", "CompressionConfig"]] = {}
 
         if compression_spec == "default":
+            # Default = the fused TileLang full_v3 path (transform+quantize fused
+            # via compress_v3, then codec): it wins on IB and on slow links.
+            # Falls back to the legacy quantizer+codec manager if TileLang is
+            # unavailable, so "default" stays portable.
             from kvserve_v1.compression.compression_manager import get_default_compression_config
             cfg_dict = get_default_compression_config()
             self._patch_model_name(cfg_dict)
-            self._manager = self._build_manager(cfg_dict)
-            self._config = self._make_config(cfg_dict)
+            self._manager = self._build_tilelang(cfg_dict, num_kv_heads,
+                                                 head_size, model_name)
+            if self._manager is not None:
+                self._config = None
+            else:
+                self._manager = self._build_manager(cfg_dict)
+                self._config = self._make_config(cfg_dict)
         elif isinstance(compression_spec, dict) and compression_spec.get("mode") == "controller":
             self._init_controller(compression_spec)
             self._manager = None
+            self._config = None
+        elif isinstance(compression_spec, dict) and compression_spec.get("backend") == "tilelang":
+            self._manager = self._build_tilelang(compression_spec, num_kv_heads,
+                                                 head_size, model_name)
+            if self._manager is None:
+                raise RuntimeError(
+                    "backend=tilelang requested but TileLang op unavailable")
             self._config = None
         else:
             self._manager = self._build_manager(compression_spec)
@@ -130,6 +146,32 @@ class KVCompressionAdapter:
         self._service_cfg = spec.get("service_config", {})
         logger.info("[KVCompressionAdapter] controller mode: library=%s epsilon=%.2f",
                     spec["library_path"], spec.get("epsilon", 0.1))
+
+    def _build_tilelang(self, cfg_dict: dict, num_kv_heads: int, head_size: int,
+                        model_name: Optional[str]):
+        """Build a TileLangCompressionManager from a config dict, or return None
+        if TileLang / the op is unavailable (caller falls back)."""
+        try:
+            from kvserve_v1.compression.tilelang_manager import TileLangCompressionManager
+            qc = dict(cfg_dict.get("quantizer_config") or {})
+            if model_name and "model_name" not in qc:
+                qc["model_name"] = model_name
+            seed = (cfg_dict.get("transformer_config") or {}).get("seed", 0x3333)
+            mgr = TileLangCompressionManager(
+                num_kv_heads=num_kv_heads,
+                head_size=head_size,
+                quantizer_config=qc,
+                codec_config=cfg_dict.get("codec_config"),
+                base_seed=seed,
+                fused_variant=cfg_dict.get("variant"),
+                throttle_gx=int(cfg_dict.get("throttle_gx", 0)),
+            )
+            logger.info("[KVCompressionAdapter] tilelang_v3 backend selected")
+            return mgr
+        except Exception as e:  # noqa: BLE001
+            logger.warning("[KVCompressionAdapter] TileLang backend unavailable "
+                           "(%s); falling back to legacy manager", e)
+            return None
 
     def _make_config(self, cfg_dict: dict) -> "CompressionConfig":
         from kvserve_v1.compression.compression_manager import CompressionConfig
@@ -222,6 +264,8 @@ class KVCompressionAdapter:
             manager, cfg = self._manager, self._config
 
         result = manager.decompress_all_layers(compressed, config=cfg)
+        self._last_decompress_timing = getattr(
+            manager, "_last_decompress_timing", None)
         if result is None:
             return None
         if isinstance(result, list):
@@ -233,6 +277,52 @@ class KVCompressionAdapter:
         num_layers = result.shape[0]
         kv_dim = self._num_kv_heads * self._head_size
         return result.contiguous().view(num_layers, 2, -1, kv_dim)
+
+    def get_last_decompress_timing(self) -> Optional[dict]:
+        """Return {t_codec_decode_ms, t_dequant_ms} from the last decompress()."""
+        return getattr(self, "_last_decompress_timing", None)
+
+    def supports_overlap(self) -> bool:
+        """True if the active manager supports per-layer overlap (TileLang)."""
+        mgr = getattr(self, "_manager", None)
+        return mgr is not None and hasattr(mgr, "compress_quant_layer")
+
+    def compress_quant_layer(self, kv_layer, layer_id):
+        """Per-layer transform+quantize (no codec); for the overlap side stream."""
+        return self._manager.compress_quant_layer(kv_layer, layer_id)
+
+    def finalize_codec(self, q_perm_layers, canon_metas, request_id,
+                       original_dtype, original_shape):
+        """Codec over pre-quantized layers; returns CompressedKVData."""
+        return self._manager.finalize_codec(q_perm_layers, canon_metas,
+                                            request_id, original_dtype, original_shape)
+
+    def compress_layer_full(self, kv_layer, layer_id):
+        """Per-layer transform+quantize+codec (for overlap=full / stream)."""
+        return self._manager.compress_layer_full(kv_layer, layer_id)
+
+    def finalize_layer_group(self, q_perms, cmetas, member_tids, member_blocks,
+                             layer_id):
+        """Lossless per-layer group codec over independently-quantized requests."""
+        return self._manager.finalize_layer_group(
+            q_perms, cmetas, member_tids, member_blocks, layer_id)
+
+    def decompress_layer_group(self, compressed_data):
+        """Codec-decode a layer group once + split/dequant per member."""
+        return self._manager.decompress_layer_group(compressed_data)
+
+    def finalize_chunked(self, chunks, chunk_metas, request_id,
+                         original_dtype, original_shape):
+        """Assemble per-layer codec chunks into a chunked CompressedKVData."""
+        return self._manager.finalize_chunked(chunks, chunk_metas, request_id,
+                                              original_dtype, original_shape)
+
+    def warmup(self, block_size: int = 16) -> None:
+        """Pre-compile any JIT kernels (e.g. TileLang compress_v3) off the
+        request critical path. No-op for managers without a warmup()."""
+        mgr = getattr(self, "_manager", None)
+        if mgr is not None and hasattr(mgr, "warmup"):
+            mgr.warmup(block_size)
 
     def update_controller(self, request_id: str, observed_latency_ms: float) -> None:
         """Feed observed transfer latency back to the bandit (controller mode only)."""

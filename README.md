@@ -112,6 +112,12 @@ pipeline.
 kv_connector_extra_config={"compression": "default"}
 ```
 
+Default mode runs the fused **TileLang `compress_v3`** pipeline (Hadamard
+transform + quantize fused in one GPU kernel, then codec). The fused kernels are
+fast enough that compressed KV transfer is a net win on fast InfiniBand as well
+as on slow links. If TileLang is not installed, default mode falls back to the
+quantizer + codec pipeline automatically.
+
 **Controller mode** uses a profile library:
 
 ```python
