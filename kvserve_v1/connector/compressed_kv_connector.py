@@ -282,6 +282,13 @@ class CompressedKVConnector(KVConnectorBase_V1):
                             and os.environ.get("KVSERVE_ASYNC_SEND", "1") == "1")
         self._rid2tid: dict[str, str] = {}        # request_id -> transfer_id (worker)
         self._pending_send_rids: set[str] = set()  # finished, awaiting send done
+        # Async compress (experimental): also skip the per-step compress barrier
+        # (offload_queue.join + offload_stream.synchronize) in wait_for_save, so
+        # compress+send of step N fully pipeline into step N+1's forward. Safe ONLY
+        # with async_send: block-free is delayed via request_finished→True and
+        # gated by get_finished (sent_layers>=num_layers ⇒ compress+extract done).
+        self._async_compress = (self._async_send
+                                and os.environ.get("KVSERVE_ASYNC_COMPRESS", "1") == "1")
         # Side-stream priority for overlap (lower = higher priority; CUDA range
         # is typically [-1 high, 0 low]). Spec key "side_stream_priority" or env
         # KVSERVE_SIDE_PRIORITY. Default 0 (same as the forward's default stream).
@@ -695,6 +702,14 @@ class CompressedKVConnector(KVConnectorBase_V1):
         # ── Stream mode: each layer was compressed AND sent in save_kv_layer;
         # just block until all per-layer NCCL sends complete. ──────────────────
         if self._side_stream is not None and self._overlap_mode == "stream":
+            if self._async_compress:
+                # Don't block on compress either — let compress+send of this step
+                # pipeline into the next step's forward. Block-free stays safe via
+                # request_finished(True) + get_finished (sent⇒compress done).
+                for rid in list(current_rids):
+                    self._layer_save_times.pop(rid, None)
+                _tl("P save_exit")
+                return
             if self._compress_offload and self._offload_queue is not None:
                 self._offload_queue.join()  # all layers compressed+enqueued (bg)
                 if self._offload_stream is not None:
